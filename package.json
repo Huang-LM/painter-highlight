@@ -1,0 +1,32 @@
+{
+  "name": "painter-highlight",
+  "version": "0.0.1",
+  "description": "A simple highlighting code generation plugin",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Huang-LM/painter-highlight.git"
+  },
+  "keywords": [
+    "painter",
+    "canvas"
+  ],
+  "author": "zhongmu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Huang-LM/painter-highlight/issues"
+  },
+  "homepage": "https://github.com/Huang-LM/painter-highlight#readme",
+  "browser": "dist/index.ts",
+  "devDependencies": {
+    "rollup": "^2.53.1",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-serve": "^1.1.0",
+    "rollup-plugin-typescript": "^1.0.1",
+    "tslib": "^2.3.0",
+    "typescript": "^4.3.5"
+  }
+}
