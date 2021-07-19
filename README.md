@@ -1,14 +1,12 @@
 # painter-highlight
 
-A simple highlighting code generation plugin
-
-
+一个基于 painter 和 highlight 实现的高亮代码图片生成工具
 
 ### 下载依赖
 
 ```
-npm install
-// yarn add
+npm install painter-highligh
+// yarn add painter-highligh
 ```
 
 ### 引用
@@ -16,8 +14,6 @@ npm install
 ```js
 import phj form 'painter-highlight'
 ```
-
-
 
 ### 如何使用
 
@@ -33,7 +29,7 @@ phj(
 )
 ```
 
-template格式
+template 格式
 
 ```js
 template = {
@@ -44,9 +40,7 @@ template = {
 }
 ```
 
-
-
-### 附一个vue使用的案例
+### 附一个 vue 使用的案例
 
 ```vue
 <template>
@@ -60,20 +54,20 @@ template = {
 import { phl } from "painter-highlight";
 
 export default {
-  name: 'App',
+  name: "App",
   mounted() {
     this.canvasNode = document.getElementById("canvas");
-    this.canvas = this.canvasNode.getContext('2d');
+    this.canvas = this.canvasNode.getContext("2d");
   },
   data() {
     return {
-      canvasNode: '',
-      canvas: '',
+      canvasNode: "",
+      canvas: "",
       template: {
-        background: "#eee", // 整个模版的背景，支持网络图片的链接、纯色和渐变色
+        background: "#eee",
         width: "600px",
         height: "400px",
-        borderRadius: "25px"
+        borderRadius: "25px",
       },
       code: `
         function isNumber(x: any): x is number {
@@ -94,15 +88,20 @@ export default {
             throw new Error(\`Expected string or number, got '\${padding}'.\`);
         }
       `,
-     language: 'ts' ,
-    }
+      language: "ts",
+    };
   },
   methods: {
     paint() {
-      phl(this.canvasNode,this.canvas, this.template, this.code, this.language)
-    }
-  }
-}
+      phl(
+        this.canvasNode,
+        this.canvas,
+        this.template,
+        this.code,
+        this.language
+      );
+    },
+  },
+};
 </script>
 ```
-
