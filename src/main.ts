@@ -258,8 +258,6 @@ const phl = function (
 
     // 换行
     if (lineWarp) {
-      // console.log("换行"+lineWarp)
-
       t.css.top =
         "calc(hl0_" +
         (index - 1) +
