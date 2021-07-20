@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "rollup -c -w rollup.config.ts",
-    "prod": "rollup -c rollup.config.publish.ts",
+    "build": "rollup -c rollup.config.publish.ts",
     "lint": "eslint --fix --ext .ts src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
