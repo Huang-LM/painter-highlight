@@ -1,12 +1,14 @@
 # painter-highlight
 
-一个基于 painter 和 highlight 实现的高亮代码图片生成工具
+一个基于 painter 和 highlight.js 实现的高亮代码图片生成工具，用于方便用户快速分享自己的代码片段。
+
+
 
 ### 下载依赖
 
 ```
-npm install painter-highligh
-// yarn add painter-highligh
+npm install painter-highlight
+// yarn add painter-highlight
 ```
 
 ### 引用
@@ -41,6 +43,8 @@ template = {
 ```
 
 ### 附一个 vue 使用的案例
+
+![示例.png](https://bu.dusays.com/2021/07/20/e1a3eacc1a950.png)
 
 ```vue
 <template>
@@ -100,7 +104,5 @@ export default {
 </script>
 ```
 
-示例图
 
-![示例.png](https://bu.dusays.com/2021/07/20/e1a3eacc1a950.png)
 
