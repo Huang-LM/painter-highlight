@@ -1,1 +1,3 @@
-console.log("hello world!");
+import phl from "./main";
+
+export { phl };
