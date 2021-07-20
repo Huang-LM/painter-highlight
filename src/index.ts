@@ -1,3 +1,3 @@
-import phl from "./main";
+import phl from './main';
 
 export { phl };
