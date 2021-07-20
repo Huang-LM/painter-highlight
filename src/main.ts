@@ -186,12 +186,12 @@ const phl = function (
       if (!stackChil[index].children.length) {
         t.text = stackChil[index].children;
         (t.css.left = "calc(hl0_" + (index - 1) + ".right - 5px)"),
-        (col = styleMap.get(stackChil[index].kind));
+          (col = styleMap.get(stackChil[index].kind));
         // console.log("-------------------------");
       } else {
         t.text = stackChil[index].children.join("");
         (t.css.left = "calc(hl0_" + (index - 1) + ".right + 1px)"),
-        (col = styleMap.get(stackChil[index].kind));
+          (col = styleMap.get(stackChil[index].kind));
       }
 
       // 左括号美化
