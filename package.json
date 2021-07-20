@@ -1,7 +1,7 @@
 {
   "name": "painter-highlight",
-  "version": "0.0.7",
-  "description": "A simple highlighting code generation plugin",
+  "version": "0.0.8",
+  "description": "A tool for generating highlighted code images based on painter and highlight.js for users to quickly share their code snippets.",
   "main": "dist/index.js",
   "scripts": {
     "dev": "rollup -c -w rollup.config.ts",
