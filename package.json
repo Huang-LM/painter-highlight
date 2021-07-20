@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://gitee.com/h-lm/painter-highlight.git"
+    "url": "git+https://github.com/Huang-LM/painter-highlight.git"
   },
   "keywords": [
     "painter",
@@ -20,9 +20,9 @@
   "author": "zhongmu",
   "license": "ISC",
   "bugs": {
-    "url": "https://gitee.com/h-lm/painter-highlight/issues"
+    "url": "https://github.com/Huang-LM/painter-highlight/issues"
   },
-  "homepage": "https://gitee.com/h-lm/painter-highlight#painter-highlight",
+  "homepage": "https://github.com/Huang-LM/painter-highlight#readme",
   "browser": "dist/index.ts",
   "types": "lib/index.d.ts",
   "devDependencies": {
