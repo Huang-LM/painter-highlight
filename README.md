@@ -2,8 +2,6 @@
 
 一个基于 painter 和 highlight 实现的高亮代码图片生成工具
 
-
-
 ### 下载依赖
 
 ```
@@ -53,23 +51,23 @@ template = {
 </template>
 
 <script>
-import { phl } from "painter-highlight";
+import { phl } from 'painter-highlight';
 
 export default {
-  name: "App",
+  name: 'App',
   mounted() {
-    this.canvasNode = document.getElementById("canvas");
-    this.canvas = this.canvasNode.getContext("2d");
+    this.canvasNode = document.getElementById('canvas');
+    this.canvas = this.canvasNode.getContext('2d');
   },
   data() {
     return {
-      canvasNode: "",
-      canvas: "",
+      canvasNode: '',
+      canvas: '',
       template: {
-        background: "#eee",
-        width: "600px",
-        height: "400px",
-        borderRadius: "25px",
+        background: '#eee',
+        width: '600px',
+        height: '350px',
+        borderRadius: '25px',
       },
       code: `
         function isNumber(x: any): x is number {
@@ -90,20 +88,19 @@ export default {
             throw new Error(\`Expected string or number, got '\${padding}'.\`);
         }
       `,
-      language: "ts",
+      language: 'ts',
     };
   },
   methods: {
     paint() {
-      phl(
-        this.canvasNode,
-        this.canvas,
-        this.template,
-        this.code,
-        this.language
-      );
+      phl(this.canvasNode, this.canvas, this.template, this.code, this.language);
     },
   },
 };
 </script>
 ```
+
+示例图
+
+![示例.png](https://bu.dusays.com/2021/07/20/e1a3eacc1a950.png)
+
