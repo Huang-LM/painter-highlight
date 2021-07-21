@@ -1,7 +1,7 @@
 {
   "name": "painter-highlight",
-  "version": "0.0.9",
-  "description": "A tool for generating highlighted code images based on painter and highlight.js for users to quickly share their code snippets.",
+  "version": "0.1.0",
+  "description": "A simple tool for generating highlighted code images.（一个简单的高亮代码图片生成工具）",
   "main": "dist/index.js",
   "scripts": {
     "dev": "rollup -c -w rollup.config.ts",
@@ -43,12 +43,13 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript": "^1.0.1",
     "rollup-plugin-typescript2": "^0.30.0",
+    "@rollup/plugin-node-resolve": "^13.0.2",
     "ts-node": "^10.1.0",
     "tslib": "^2.3.0",
-    "typescript": "^4.3.5"
+    "typescript": "^4.3.5",
+    "rollup-plugin-peer-deps-external": "^2.2.4"
   },
   "dependencies": {
-    "@rollup/plugin-node-resolve": "^13.0.2",
     "highlight.js": "^11.1.0",
     "painter-kernel": "^1.0.5"
   }

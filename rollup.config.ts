@@ -1,25 +1,21 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
-import typescript from 'rollup-plugin-typescript';
-// import { terser } from 'rollup-plugin-terser';
+// import typescript from 'rollup-plugin-typescript';
 import esbuild from 'rollup-plugin-esbuild';
 import babel from 'rollup-plugin-babel';
-import { eslint } from 'rollup-plugin-eslint';
-import peerDependencies from 'rollup-plugin-peer-deps-external';
+// import peerDependencies from 'rollup-plugin-peer-deps-external';
 // import pkg from './package.json';
 
 const devPulugins = [
+  // peerDependencies(),
   resolve(),
   commonjs(),
-  typescript(),
-  eslint(),
-  peerDependencies(),
-  // terser({ compress: { drop_console: true } }),
-  babel({ exclude: '**/node_modules/**' }),
+  // typescript(),
+  babel({ exclude: 'node_modules/**' }),
   esbuild({
     include: /\.ts?$/,
     exclude: /node_modules/,
-    sourceMap: false,
+    sourceMap: true,
     minify: false,
   }),
 ];
