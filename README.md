@@ -14,7 +14,7 @@ npm install painter-highlight
 ### 引用
 
 ```js
-import phj form 'painter-highlight'
+import phj from 'painter-highlight'
 ```
 
 ### 如何使用
