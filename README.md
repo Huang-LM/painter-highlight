@@ -2,8 +2,6 @@
 
 一个基于 painter 和 highlight.js 实现的高亮代码图片生成工具，用于方便用户快速分享自己的代码片段。
 
-
-
 ### 下载依赖
 
 ```
@@ -14,7 +12,7 @@ npm install painter-highlight
 ### 引用
 
 ```js
-import phj from 'painter-highlight'
+import phl from 'painter-highlight';
 ```
 
 ### 如何使用
@@ -22,7 +20,7 @@ import phj from 'painter-highlight'
 需要传入的值
 
 ```tsx
-phj(
+phl(
     CanvasNode: object, // 绑定的一个canvas元素
     canvas: CanvasRenderingContext2D,  // 将canvas通过getContext后得到的东西
     template: template,  // 生成图片的样式，下方有可配置项
@@ -36,8 +34,8 @@ template 格式
 ```js
 template = {
   background: string; // 整个模版的背景，支持网络图片的链接、纯色和渐变色
-  width: string;
-  height: string;
+  width: string; // 可选填"auto" 将自动判断宽度
+  height: string; // 可选填"auto" 将自动判断高度
   borderRadius: string;
 }
 ```
@@ -69,7 +67,7 @@ export default {
       canvas: '',
       template: {
         background: '#eee',
-        width: '600px',
+        width: '600px', // 'auto'
         height: '350px',
         borderRadius: '25px',
       },
@@ -103,6 +101,3 @@ export default {
 };
 </script>
 ```
-
-
-
