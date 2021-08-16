@@ -222,4 +222,4 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   });
 };
 
-export { phl as default };
+export default phl;
