@@ -3,11 +3,13 @@ import commonjs from 'rollup-plugin-commonjs';
 // import typescript from 'rollup-plugin-typescript';
 import esbuild from 'rollup-plugin-esbuild';
 import babel from 'rollup-plugin-babel';
+import analyze from 'rollup-plugin-analyzer';
 // import peerDependencies from 'rollup-plugin-peer-deps-external';
 // import pkg from './package.json';
 
 const devPulugins = [
   // peerDependencies(),
+  analyze(),
   resolve(),
   commonjs(),
   // typescript(),

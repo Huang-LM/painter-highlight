@@ -208,7 +208,7 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   views[1].css.left = "calc(hl0_0.right*2)";
   views[0].css.left = "0";
   if (template.height == "auto") {
-    template.height = height * 19 + "px";
+    template.height = height * 19.5 + "px";
   }
   if (template.width == "auto") {
     template.width = maxWidth * 14 + "px";
