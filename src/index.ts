@@ -252,12 +252,14 @@ const phl = function (
         stackChil[index].children[0].match !== null &&
         stackChil[index].children[0]?.match(/\/\*\*/g)
       ) {
-        commentWarp += stackChil[index].children[0].match(reg).length;
+        commentWarp += stackChil[index].children[0].match(reg)?.length
+          ? stackChil[index].children[0].match(reg)?.length
+          : 0;
       }
 
       // 颜色匹配
       if (!col) {
-        t.css.color = styleMap.get('default');
+        t.css.color = styleMap.get('default').color;
       } else {
         t.css.color = col.color;
       }
