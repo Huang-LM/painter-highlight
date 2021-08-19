@@ -1,6 +1,6 @@
 {
   "name": "painter-highlight",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A simple tool for generating highlighted code images.（一个简单的高亮代码图片生成工具）",
   "main": "dist/index.js",
   "scripts": {
