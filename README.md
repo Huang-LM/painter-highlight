@@ -34,15 +34,15 @@ template 格式
 ```js
 template = {
   background: string; // 整个模版的背景，支持网络图片的链接、纯色和渐变色
-  width: string; // 可选填"auto" 将自动判断宽度
-  height: string; // 可选填"auto" 将自动判断高度
+  width: string; // 可填"auto" 将自动判断宽度
+  height: string; // 可填"auto" 将自动判断高度
   borderRadius: string;
 }
 ```
 
 ### 附一个 vue 使用的案例
 
-![示例.png](https://bu.dusays.com/2021/07/20/e1a3eacc1a950.png)
+![示例](https://bu.dusays.com/2021/08/19/cc21f6eb96347.png)
 
 ```vue
 <template>
@@ -66,10 +66,10 @@ export default {
       canvasNode: '',
       canvas: '',
       template: {
-        background: '#eee',
-        width: '600px', // 'auto'
-        height: '350px',
-        borderRadius: '25px',
+        background: '#101213',
+        width: 'auto', // '600px'
+        height: 'auto',
+        borderRadius: '5px',
       },
       code: `
         function isNumber(x: any): x is number {
@@ -101,3 +101,9 @@ export default {
 };
 </script>
 ```
+
+> 待开发功能
+>
+> - [x] 自动宽高
+> - [ ] 自定义主题
+

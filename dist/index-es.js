@@ -228,11 +228,50 @@ const phl = function(CanvasNode, canvas, template, code, language) {
     }
     views.push(t);
   }
-  views[0].css.top = "35px";
+  views[0].css.top = "55px";
   views[1].css.left = "calc(hl0_0.right + 0px)";
   views[0].css.left = "0";
+  let tips1 = {
+    id: "hl1_0",
+    type: "rect",
+    css: {
+      top: "18px",
+      left: "18px",
+      height: "12px",
+      width: "12px",
+      color: "#E0443E",
+      borderRadius: "50%"
+    }
+  };
+  let tips2 = {
+    id: "hl1_1",
+    type: "rect",
+    css: {
+      top: "18px",
+      left: "38px",
+      height: "12px",
+      width: "12px",
+      color: "#DEA123",
+      borderRadius: "50%"
+    }
+  };
+  let tips3 = {
+    id: "hl1_3",
+    type: "rect",
+    css: {
+      top: "18px",
+      left: "58px",
+      height: "12px",
+      width: "12px",
+      color: "#1AAB29",
+      borderRadius: "50%"
+    }
+  };
+  views.unshift(tips3);
+  views.unshift(tips2);
+  views.unshift(tips1);
   if (template.height == "auto") {
-    template.height = height * 20 + 30 + "px";
+    template.height = height * 20 + 60 + "px";
   }
   if (template.width == "auto") {
     template.width = maxWidth * 10.5 + "px";
