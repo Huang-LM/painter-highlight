@@ -6,43 +6,52 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   const stack = hljs.highlight(code, { language })._emitter.stack;
   let defaultStyle = {
     default: {
-      color: "#c9d1d9"
+      color: "#55b5db"
+    },
+    property: {
+      color: "#a074c4"
     },
     comment: {
-      color: "#c9d1d9"
+      color: "#41535b"
+    },
+    literal: {
+      color: "#ee3300ef"
     },
     doctag: {
       color: "#ff7b72"
     },
     built_in: {
-      color: "#ee3300ef"
+      color: "#55b5db"
     },
     keyword: {
-      color: "#ff7b72"
+      color: "#e6cd69"
     },
     "template-tag": {
       color: "#ff7b72"
     },
     "template-variable": {
-      color: "#ff7b72"
+      color: "#9fca56"
     },
     type: {
-      color: "#ff7b72"
+      color: "#9fca56"
     },
     string: {
-      color: "#afa5b4"
+      color: "#55b5db"
     },
     attr: {
       color: "#ff7b72"
     },
     number: {
-      color: "#afe5bb"
+      color: "#cd3f45"
     },
     params: {
-      color: "#aff5b4"
+      color: "#55b5db"
     },
     "variable.language": {
-      color: "#ff7b72"
+      color: "#55b5db"
+    },
+    "variable.constant": {
+      color: "#55b5db"
     },
     subst: {
       color: "Purple"
@@ -57,7 +66,7 @@ const phl = function(CanvasNode, canvas, template, code, language) {
       color: "#dda8ff"
     },
     "title.function": {
-      color: "#d2a8ff"
+      color: "#a074c4"
     },
     deletion: {
       color: "#ffdcd7",
@@ -76,13 +85,17 @@ const phl = function(CanvasNode, canvas, template, code, language) {
       fontStyle: "italic"
     },
     sign: {
-      color: "#2f2f2fee"
+      color: "#fff"
+    },
+    attribute: {
+      color: "#9fca56"
     }
   };
   let stackChil = stack[0].children;
   const styleMap = new Map(Object.entries(defaultStyle));
   const reg = RegExp(/\n/g);
   const reg2 = RegExp(/([^\s])/g);
+  const reg22 = RegExp(/([\s])/g);
   const reg3 = RegExp(/\t/g);
   let lineWarp = 0;
   let commentWarp = 0;
@@ -94,7 +107,7 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   codeCopy.split("\n").filter((line, index) => {
     const CURRENT_LINE = index + 1;
     let width;
-    width = line.match(reg2)?.length;
+    width = line.match(reg2)?.length + line.match(reg22)?.length + (line.match(reg3)?.length ? line.match(reg3)?.length : 0);
     if (maxWidth < width) {
       maxWidth = width ? width : 0;
     }
@@ -165,7 +178,7 @@ const phl = function(CanvasNode, canvas, template, code, language) {
         t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
         leftBracket = 0;
       }
-      if (stackChil[index].children.length && stackChil[index].children[0].match !== null && stackChil[index].children[0].match(/\/\*\*/g)) {
+      if (stackChil[index].children.length && stackChil[index].children[0].match !== null && stackChil[index].children[0]?.match(/\/\*\*/g)) {
         commentWarp += stackChil[index].children[0].match(reg).length;
       }
       if (!col) {
@@ -174,18 +187,29 @@ const phl = function(CanvasNode, canvas, template, code, language) {
         t.css.color = col.color;
       }
     } else if (typeof stackChil[index] === "string") {
+      console.log(stackChil[index].match(reg22)?.length);
       t.text = stackChil[index];
-      t.css.color = styleMap.get("sign").color;
+      if (stackChil[index].match(RegExp(/^[a-zA-Z]/g))) {
+        t.css.color = styleMap.get("string").color;
+      } else if (stackChil[index].match(RegExp(/=/g))) {
+        t.css.color = styleMap.get("attribute").color;
+      } else {
+        t.css.color = styleMap.get("sign").color;
+      }
       t.css.left = "calc(hl0_" + (index - 1) + ".right + 2px)";
       if (leftBracket) {
         t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
         leftBracket = 0;
       }
+      if (stackChil[index].match(reg22)?.length) {
+        let k = stackChil[index].match(reg22)?.length;
+        t.css.left = "calc(hl0_" + (index - 1) + ".right +" + k * 2 + " px)";
+      }
       if (stackChil[index].match(reg) && !stackChil[index].match(/\`/g)) {
         lineWarp = stackChil[index].match(reg).length;
       } else if (stackChil[index] === " ") {
         t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
-      } else if (stackChil[index].match(/\(/)) {
+      } else if (stackChil[index].match(/\(/) || stackChil[index].match(/\[/)) {
         t.css.left = "calc(hl0_" + (index - 1) + ".right + 4px)";
         leftBracket = 1;
       }
@@ -204,22 +228,20 @@ const phl = function(CanvasNode, canvas, template, code, language) {
     }
     views.push(t);
   }
-  views[0].css.top = "5px";
-  views[1].css.left = "calc(hl0_0.right*2)";
+  views[0].css.top = "35px";
+  views[1].css.left = "calc(hl0_0.right + 0px)";
   views[0].css.left = "0";
   if (template.height == "auto") {
-    template.height = height * 19.5 + "px";
+    template.height = height * 20 + 30 + "px";
   }
   if (template.width == "auto") {
-    template.width = maxWidth * 14 + "px";
+    template.width = maxWidth * 10.5 + "px";
   }
   CanvasNode.width = toPx(template.width);
   CanvasNode.height = toPx(template.height);
   template.views = views;
   const pen = new Pen(canvas, template);
-  pen.paint(() => {
-    console.log("ok");
-  });
+  pen.paint();
 };
 
 export default phl;
