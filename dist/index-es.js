@@ -179,10 +179,10 @@ const phl = function(CanvasNode, canvas, template, code, language) {
         leftBracket = 0;
       }
       if (stackChil[index].children.length && stackChil[index].children[0].match !== null && stackChil[index].children[0]?.match(/\/\*\*/g)) {
-        commentWarp += stackChil[index].children[0].match(reg).length;
+        commentWarp += stackChil[index].children[0].match(reg)?.length ? stackChil[index].children[0].match(reg)?.length : 0;
       }
       if (!col) {
-        t.css.color = styleMap.get("default");
+        t.css.color = styleMap.get("default").color;
       } else {
         t.css.color = col.color;
       }
