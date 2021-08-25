@@ -3,7 +3,7 @@ import { toPx, Pen } from 'painter-kernel';
 
 const phl = function(CanvasNode, canvas, template, code, language) {
   let views = [];
-  const stack = hljs.highlight(code, { language })._emitter.stack;
+  let stack = hljs.highlight(code, { language })._emitter.root.children;
   let defaultStyle = {
     default: {
       color: "#55b5db"
@@ -85,14 +85,14 @@ const phl = function(CanvasNode, canvas, template, code, language) {
       fontStyle: "italic"
     },
     sign: {
-      color: "#fff"
+      color: "#eee"
     },
     attribute: {
       color: "#9fca56"
     }
   };
-  let stackChil = stack[0].children;
   const styleMap = new Map(Object.entries(defaultStyle));
+  let stackMap = [];
   const reg = RegExp(/\n/g);
   const reg2 = RegExp(/([^\s])/g);
   const reg22 = RegExp(/([\s])/g);
@@ -100,9 +100,8 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   let lineWarp = 0;
   let commentWarp = 0;
   let leftBracket = 0;
-  let height = 0;
+  let maxHeight = 0;
   let maxWidth = 0;
-  let stackMap = [];
   let codeCopy = code;
   codeCopy.split("\n").filter((line, index) => {
     const CURRENT_LINE = index + 1;
@@ -111,14 +110,14 @@ const phl = function(CanvasNode, canvas, template, code, language) {
     if (maxWidth < width) {
       maxWidth = width ? width : 0;
     }
-    height++;
+    maxHeight++;
     return CURRENT_LINE >= 0 && CURRENT_LINE <= 1e3;
   }).join("\n");
-  for (let i = 0; i < stackChil.length; i++) {
-    if (typeof stackChil[i] === "string") {
-      if (stackChil[i].match(reg) && stackChil[i].match(reg2)) {
-        let start = stackChil[i];
-        let nCount = stackChil[i].match(reg);
+  for (let i = 0; i < stack.length; i++) {
+    if (typeof stack[i] === "string") {
+      if (stack[i].match(reg) && stack[i].match(reg2)) {
+        let start = stack[i];
+        let nCount = stack[i].match(reg);
         while (nCount.length) {
           let sNode = start.indexOf(nCount[0]);
           if (start.slice(0, sNode)) {
@@ -129,21 +128,36 @@ const phl = function(CanvasNode, canvas, template, code, language) {
           nCount.shift();
         }
         stackMap.push(start);
+      } else if (stack[i].match(/\]/)) {
+        let rightMidBrackets = stack[i].indexOf("]");
+        if (stack[i].match(/\)/)) {
+          let rightBrackets = stack[i].indexOf(")");
+          stackMap.push(stack[i].slice(0, rightMidBrackets));
+          stackMap.push(stack[i].slice(rightMidBrackets, rightBrackets));
+          stackMap.push(stack[i].slice(rightBrackets));
+        } else {
+          stackMap.push(stack[i].slice(0, rightMidBrackets));
+          stackMap.push(stack[i].slice(rightMidBrackets));
+        }
+      } else if (stack[i].match(/\)/)) {
+        let rightBrackets = stack[i].indexOf(")");
+        stackMap.push(stack[i].slice(0, rightBrackets));
+        stackMap.push(stack[i].slice(rightBrackets));
       } else {
-        stackMap.push(stackChil[i]);
+        stackMap.push(stack[i]);
       }
     } else {
-      if (stackChil[i].kind === "comment") {
-        stackMap.push(stackChil[i]);
-      } else if (stackChil[i].kind === "property" && stackChil[i].children[0].children) {
-        stackMap.push(stackChil[i].children[0].children[0]);
-      } else if (stackChil[i].children.length > 1) {
-        let stackCC = stackChil[i].children;
+      if (stack[i].kind === "comment") {
+        stackMap.push(stack[i]);
+      } else if (stack[i].kind === "property" && stack[i].children[0].children) {
+        stackMap.push(stack[i].children[0].children[0]);
+      } else if (stack[i].children.length > 1) {
+        let stackCC = stack[i].children;
         for (let i2 of stackCC) {
           stackMap.push(i2);
         }
       } else {
-        stackMap.push(stackChil[i]);
+        stackMap.push(stack[i]);
       }
     }
   }
@@ -152,8 +166,8 @@ const phl = function(CanvasNode, canvas, template, code, language) {
     if (data !== "")
       ss.push(data);
   });
-  stackChil = ss;
-  for (let index = 0; index < stackChil.length; index++) {
+  stack = ss;
+  for (let index = 0; index < stack.length; index++) {
     let t = {
       id: "hl0_" + index,
       text: "",
@@ -165,33 +179,32 @@ const phl = function(CanvasNode, canvas, template, code, language) {
         fontSize: "16px"
       }
     };
-    if (typeof stackChil[index] === "object") {
+    if (typeof stack[index] === "object") {
       let col;
-      if (!stackChil[index].children.length) {
-        t.text = stackChil[index].children;
-        t.css.left = "calc(hl0_" + (index - 1) + ".right - 5px)", col = styleMap.get(stackChil[index].kind);
+      if (!stack[index].children.length) {
+        t.text = stack[index].children;
+        t.css.left = "calc(hl0_" + (index - 1) + ".right - 5px)", col = styleMap.get(stack[index].kind);
       } else {
-        t.text = stackChil[index].children.join("");
-        t.css.left = "calc(hl0_" + (index - 1) + ".right + 1px)", col = styleMap.get(stackChil[index].kind);
+        t.text = stack[index].children.join("");
+        t.css.left = "calc(hl0_" + (index - 1) + ".right + 1px)", col = styleMap.get(stack[index].kind);
       }
       if (leftBracket) {
-        t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
+        t.css.left = "calc(hl0_" + (index - 1) + ".right - 5px)";
         leftBracket = 0;
       }
-      if (stackChil[index].children.length && stackChil[index].children[0].match !== null && stackChil[index].children[0]?.match(/\/\*\*/g)) {
-        commentWarp += stackChil[index].children[0].match(reg)?.length ? stackChil[index].children[0].match(reg)?.length : 0;
+      if (stack[index].children.length && stack[index].children[0].match !== null && stack[index].children[0]?.match(/\/\*\*/g)) {
+        commentWarp += stack[index].children[0].match(reg)?.length ? stack[index].children[0].match(reg)?.length : 0;
       }
       if (!col) {
         t.css.color = styleMap.get("default").color;
       } else {
         t.css.color = col.color;
       }
-    } else if (typeof stackChil[index] === "string") {
-      console.log(stackChil[index].match(reg22)?.length);
-      t.text = stackChil[index];
-      if (stackChil[index].match(RegExp(/^[a-zA-Z]/g))) {
+    } else if (typeof stack[index] === "string") {
+      t.text = stack[index];
+      if (stack[index].match(RegExp(/^[a-zA-Z]/g))) {
         t.css.color = styleMap.get("string").color;
-      } else if (stackChil[index].match(RegExp(/=/g))) {
+      } else if (stack[index].match(RegExp(/=/g))) {
         t.css.color = styleMap.get("attribute").color;
       } else {
         t.css.color = styleMap.get("sign").color;
@@ -201,15 +214,11 @@ const phl = function(CanvasNode, canvas, template, code, language) {
         t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
         leftBracket = 0;
       }
-      if (stackChil[index].match(reg22)?.length) {
-        let k = stackChil[index].match(reg22)?.length;
-        t.css.left = "calc(hl0_" + (index - 1) + ".right +" + k * 2 + " px)";
-      }
-      if (stackChil[index].match(reg) && !stackChil[index].match(/\`/g)) {
-        lineWarp = stackChil[index].match(reg).length;
-      } else if (stackChil[index] === " ") {
+      if (stack[index].match(reg) && !stack[index].match(/\`/g)) {
+        lineWarp = stack[index].match(reg).length;
+      } else if (stack[index] === " ") {
         t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
-      } else if (stackChil[index].match(/\(/) || stackChil[index].match(/\[/)) {
+      } else if (stack[index].match(/\(/) || stack[index].match(/\[/)) {
         t.css.left = "calc(hl0_" + (index - 1) + ".right + 4px)";
         leftBracket = 1;
       }
@@ -217,14 +226,14 @@ const phl = function(CanvasNode, canvas, template, code, language) {
     if (lineWarp) {
       t.css.top = "calc(hl0_" + (index - 1) + ".top +" + 20 * (lineWarp + commentWarp) + " px)";
       t.css.left = "0";
-      if (stackChil[index].match(reg) && stackChil[index].slice(2)) {
+      if (stack[index].match(reg) && stack[index].slice(2)) {
         t.css.left = "calc(hl0_0.right)";
       }
       lineWarp = 0;
       commentWarp = 0;
     }
-    if (typeof stackChil[index] === "string" && stackChil[index].match(reg3)) {
-      t.css.left = "calc(hl0_" + index + ".right + " + 18 * stackChil[index].match(reg3).length + "px)";
+    if (typeof stack[index] === "string" && stack[index].match(reg3)) {
+      t.css.left = "calc(hl0_" + index + ".right + " + 18 * stack[index].match(reg3).length + "px)";
     }
     views.push(t);
   }
@@ -271,7 +280,7 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   views.unshift(tips2);
   views.unshift(tips1);
   if (template.height == "auto") {
-    template.height = height * 20 + 60 + "px";
+    template.height = maxHeight * 20 + 60 + "px";
   }
   if (template.width == "auto") {
     template.width = maxWidth * 10.5 + "px";
