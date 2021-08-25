@@ -3,7 +3,6 @@ import { toPx, Pen } from 'painter-kernel';
 
 const phl = function(CanvasNode, canvas, template, code, language) {
   let views = [];
-  let stack = hljs.highlight(code, { language })._emitter.root.children;
   let defaultStyle = {
     default: {
       color: "#55b5db"
@@ -102,22 +101,30 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   let leftBracket = 0;
   let maxHeight = 0;
   let maxWidth = 0;
-  let codeCopy = code;
-  codeCopy.split("\n").filter((line, index) => {
-    const CURRENT_LINE = index + 1;
+  let codeCopy = code.split("\n").map((line, index) => {
     let width;
     width = line.match(reg2)?.length + line.match(reg22)?.length + (line.match(reg3)?.length ? line.match(reg3)?.length : 0);
     if (maxWidth < width) {
       maxWidth = width ? width : 0;
     }
+    if (line.match(reg22) && line.match(reg2)?.length) {
+      let tap1 = line.indexOf(line.match(reg2)[0]);
+      line = line.slice(0, tap1) + line.slice(0, tap1) + line.slice(tap1);
+    }
     maxHeight++;
-    return CURRENT_LINE >= 0 && CURRENT_LINE <= 1e3;
+    return line;
   }).join("\n");
+  let stack = hljs.highlight(codeCopy, { language })._emitter.root.children;
   for (let i = 0; i < stack.length; i++) {
     if (typeof stack[i] === "string") {
       if (stack[i].match(reg) && stack[i].match(reg2)) {
         let start = stack[i];
         let nCount = stack[i].match(reg);
+        if (stack[i].match(/\)/)) {
+          let rightBrackets = stack[i].indexOf(")");
+          stackMap.push(stack[i].slice(0, rightBrackets));
+          start = stack[i].slice(rightBrackets);
+        }
         while (nCount.length) {
           let sNode = start.indexOf(nCount[0]);
           if (start.slice(0, sNode)) {
@@ -154,7 +161,13 @@ const phl = function(CanvasNode, canvas, template, code, language) {
       } else if (stack[i].children.length > 1) {
         let stackCC = stack[i].children;
         for (let i2 of stackCC) {
-          stackMap.push(i2);
+          if (typeof i2 === "string" && i2.match(/\)/)?.length) {
+            let rightBrackets = i2.indexOf(")");
+            stackMap.push(i2.slice(0, rightBrackets + 1));
+            stackMap.push(i2.slice(rightBrackets + 1));
+          } else {
+            stackMap.push(i2);
+          }
         }
       } else {
         stackMap.push(stack[i]);
@@ -202,7 +215,7 @@ const phl = function(CanvasNode, canvas, template, code, language) {
       }
     } else if (typeof stack[index] === "string") {
       t.text = stack[index];
-      if (stack[index].match(RegExp(/^[a-zA-Z]/g))) {
+      if (stack[index].match(RegExp(/[a-zA-Z]/g))) {
         t.css.color = styleMap.get("string").color;
       } else if (stack[index].match(RegExp(/=/g))) {
         t.css.color = styleMap.get("attribute").color;
