@@ -218,7 +218,13 @@ const phl = function (
         // 若存在多个children
         let stackCC = stack[i].children;
         for (let i of stackCC) {
-          stackMap.push(i);
+          if (typeof i === 'string' && i.match(/\)/)?.length) {
+            let rightBrackets = i.indexOf(')');
+            stackMap.push(i.slice(0, rightBrackets + 1));
+            stackMap.push(i.slice(rightBrackets + 1));
+          } else {
+            stackMap.push(i);
+          }
         }
       } else {
         stackMap.push(stack[i]);
@@ -269,6 +275,7 @@ const phl = function (
       // 多行注释时
       if (
         stack[index].children.length &&
+        stack[index].children[0].kind !== 'regexp' &&
         stack[index].children[0].match !== null &&
         stack[index].children[0]?.match(/\/\*\*/g)
       ) {
@@ -290,7 +297,7 @@ const phl = function (
       // 区分符号和字母
       if (stack[index].match(RegExp(/[a-zA-Z]/g))) {
         t.css.color = styleMap.get('string').color;
-      } else if (stack[index].match(RegExp(/=/g))) {
+      } else if (stack[index].match(RegExp(/=/g)) || stack[index].match(RegExp(/>/g))) {
         t.css.color = styleMap.get('attribute').color;
       } else {
         t.css.color = styleMap.get('sign').color;
