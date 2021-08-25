@@ -3,7 +3,7 @@ import hljs from 'highlight.js';
 import { Pen, toPx } from 'painter-kernel';
 
 type template = {
-  background: string; // 整个模版的背景，支持网络图片的链接、纯色和渐变色
+  background: string;
   width: string;
   height: string;
   borderRadius: string;
@@ -18,8 +18,6 @@ const phl = function (
   language: string,
 ) {
   let views: any[] = [];
-
-  const stack = hljs.highlight(code, { language: language })._emitter.stack;
 
   let defaultStyle = {
     default: {
@@ -102,16 +100,17 @@ const phl = function (
       fontStyle: 'italic',
     },
     sign: {
-      color: '#fff',
+      color: '#eee',
     },
     attribute: {
       color: '#9fca56',
     },
   };
-  let stackChil = stack[0].children;
 
-  // 转换成map
+  // 转换成颜色的map
   const styleMap = new Map(Object.entries(defaultStyle));
+
+  let stackMap = [];
 
   // 匹配换行符
   const reg = RegExp(/\n/g);
@@ -122,23 +121,21 @@ const phl = function (
   // 匹配tab符
   const reg3 = RegExp(/\t/g);
 
+  // 换行记录数
   let lineWarp = 0;
+  // 多行注释记录数
   let commentWarp = 0;
+  // 左括号记录数
   let leftBracket = 0;
 
   // 高度
-  let height = 0;
+  let maxHeight = 0;
   // 宽度
   let maxWidth = 0;
 
-  let stackMap = [];
-
-  // 最大宽度
-  let codeCopy = code;
-  codeCopy
+  let codeCopy = code
     .split('\n')
-    .filter((line, index) => {
-      const CURRENT_LINE = index + 1;
+    .map((line, index) => {
       let width: number;
       width =
         line.match(reg2)?.length +
@@ -147,28 +144,36 @@ const phl = function (
       if (maxWidth < width) {
         maxWidth = width ? width : 0;
       }
-      height++;
-      return CURRENT_LINE >= 0 && CURRENT_LINE <= 1000;
+      if (line.match(reg22) && line.match(reg2)?.length) {
+        let tap1 = line.indexOf(line.match(reg2)[0]);
+        line = line.slice(0, tap1) + line.slice(0, tap1) + line.slice(tap1);
+      }
+      maxHeight++;
+      return line;
     })
     .join('\n');
 
-  // 分离符号与换行符
-  for (let i = 0; i < stackChil.length; i++) {
-    // console.log(typeof stackChil[i]);
+  let stack = hljs.highlight(codeCopy, { language: language })._emitter.root.children;
 
-    if (typeof stackChil[i] === 'string') {
+  // 将符号和换行符分离
+  for (let i = 0; i < stack.length; i++) {
+    if (typeof stack[i] === 'string') {
       // string
       // 有换行符和字符的时候
-      if (stackChil[i].match(reg) && stackChil[i].match(reg2)) {
-        // console.log("gai");
+      if (stack[i].match(reg) && stack[i].match(reg2)) {
         // 还没分离的部分
-        let start = stackChil[i];
+        let start = stack[i];
         // 内部有多少\n
-        let nCount = stackChil[i].match(reg);
+        let nCount = stack[i].match(reg);
+
+        if (stack[i].match(/\)/)) {
+          let rightBrackets = stack[i].indexOf(')');
+          stackMap.push(stack[i].slice(0, rightBrackets));
+          start = stack[i].slice(rightBrackets);
+        }
 
         while (nCount.length) {
           let sNode = start.indexOf(nCount[0]);
-
           // 前
           if (start.slice(0, sNode)) {
             stackMap.push(start.slice(0, sNode));
@@ -181,39 +186,55 @@ const phl = function (
           nCount.shift();
         }
         stackMap.push(start);
+      } else if (stack[i].match(/\]/)) {
+        // 右括号粘住的问题
+        let rightMidBrackets = stack[i].indexOf(']');
+
+        if (stack[i].match(/\)/)) {
+          let rightBrackets = stack[i].indexOf(')');
+          stackMap.push(stack[i].slice(0, rightMidBrackets));
+          stackMap.push(stack[i].slice(rightMidBrackets, rightBrackets));
+          stackMap.push(stack[i].slice(rightBrackets));
+        } else {
+          stackMap.push(stack[i].slice(0, rightMidBrackets));
+          stackMap.push(stack[i].slice(rightMidBrackets));
+        }
+      } else if (stack[i].match(/\)/)) {
+        let rightBrackets = stack[i].indexOf(')');
+
+        stackMap.push(stack[i].slice(0, rightBrackets));
+        stackMap.push(stack[i].slice(rightBrackets));
       } else {
-        stackMap.push(stackChil[i]);
+        stackMap.push(stack[i]);
       }
     } else {
       // object
-      if (stackChil[i].kind === 'comment') {
+      if (stack[i].kind === 'comment') {
         // 是注释时直接导入
-        stackMap.push(stackChil[i]);
-      } else if (stackChil[i].kind === 'property' && stackChil[i].children[0].children) {
-        stackMap.push(stackChil[i].children[0].children[0]);
-      } else if (stackChil[i].children.length > 1) {
+        stackMap.push(stack[i]);
+      } else if (stack[i].kind === 'property' && stack[i].children[0].children) {
+        stackMap.push(stack[i].children[0].children[0]);
+      } else if (stack[i].children.length > 1) {
         // 若存在多个children
-        let stackCC = stackChil[i].children;
+        let stackCC = stack[i].children;
         for (let i of stackCC) {
           stackMap.push(i);
         }
       } else {
-        stackMap.push(stackChil[i]);
+        stackMap.push(stack[i]);
       }
     }
   }
 
-  // 去除""
+  // 去除''
   let ss = [];
   stackMap.forEach((data) => {
     if (data !== '') ss.push(data);
   });
-  stackChil = ss;
+  stack = ss;
 
   // 主要循环判断
-  for (let index = 0; index < stackChil.length; index++) {
-    // console.log(stackChil[index]);
-    // console.log(typeof stackChil[index]);
+  for (let index = 0; index < stack.length; index++) {
     let t = {
       id: 'hl0_' + index,
       text: '',
@@ -227,34 +248,31 @@ const phl = function (
     };
 
     // 匹配为object时
-    if (typeof stackChil[index] === 'object') {
+    if (typeof stack[index] === 'object') {
       let col;
 
       // 有子项与没子项的区分
-      if (!stackChil[index].children.length) {
-        t.text = stackChil[index].children;
-        (t.css.left = 'calc(hl0_' + (index - 1) + '.right - 5px)'), (col = styleMap.get(stackChil[index].kind));
-        // console.log("-------------------------");
+      if (!stack[index].children.length) {
+        t.text = stack[index].children;
+        (t.css.left = 'calc(hl0_' + (index - 1) + '.right - 5px)'), (col = styleMap.get(stack[index].kind));
       } else {
-        t.text = stackChil[index].children.join('');
-        (t.css.left = 'calc(hl0_' + (index - 1) + '.right + 1px)'), (col = styleMap.get(stackChil[index].kind));
+        t.text = stack[index].children.join('');
+        (t.css.left = 'calc(hl0_' + (index - 1) + '.right + 1px)'), (col = styleMap.get(stack[index].kind));
       }
 
       // 左括号美化
       if (leftBracket) {
-        t.css.left = 'calc(hl0_' + (index - 1) + '.right - 8px)';
+        t.css.left = 'calc(hl0_' + (index - 1) + '.right - 5px)';
         leftBracket = 0;
       }
 
       // 多行注释时
       if (
-        stackChil[index].children.length &&
-        stackChil[index].children[0].match !== null &&
-        stackChil[index].children[0]?.match(/\/\*\*/g)
+        stack[index].children.length &&
+        stack[index].children[0].match !== null &&
+        stack[index].children[0]?.match(/\/\*\*/g)
       ) {
-        commentWarp += stackChil[index].children[0].match(reg)?.length
-          ? stackChil[index].children[0].match(reg)?.length
-          : 0;
+        commentWarp += stack[index].children[0].match(reg)?.length ? stack[index].children[0].match(reg)?.length : 0;
       }
 
       // 颜色匹配
@@ -265,41 +283,42 @@ const phl = function (
       }
 
       // 匹配为string时
-    } else if (typeof stackChil[index] === 'string') {
-      console.log(stackChil[index].match(reg22)?.length);
+    } else if (typeof stack[index] === 'string') {
+      // console.log(stack[index].match(reg22)?.length);
 
-      t.text = stackChil[index];
+      t.text = stack[index];
       // 区分符号和字母
-      if (stackChil[index].match(RegExp(/^[a-zA-Z]/g))) {
-        // console.log(stackChil[index]);
+      if (stack[index].match(RegExp(/[a-zA-Z]/g))) {
         t.css.color = styleMap.get('string').color;
-      } else if (stackChil[index].match(RegExp(/=/g))) {
+      } else if (stack[index].match(RegExp(/=/g))) {
         t.css.color = styleMap.get('attribute').color;
       } else {
         t.css.color = styleMap.get('sign').color;
       }
       t.css.left = 'calc(hl0_' + (index - 1) + '.right + 2px)';
 
-      // console.log(styleMap.get("sign").color);
       // 左括号美化
       if (leftBracket) {
         t.css.left = 'calc(hl0_' + (index - 1) + '.right - 8px)';
         leftBracket = 0;
       }
 
+      // if (stack[index].match(/\]/)) {
+      //   t.css.left = 'calc(hl0_' + (index - 1) + '.right - 4px)';
+      // }
+
       //调整空格位置
-      if (stackChil[index].match(reg22)?.length) {
-        let k = stackChil[index].match(reg22)?.length;
-        t.css.left = 'calc(hl0_' + (index - 1) + '.right +' + k * 2 + ' px)';
-      }
+      // if (stack[index].match(reg22)?.length) {
+      //   let k = stack[index].match(reg22)?.length;
+      //   t.css.left = 'calc(hl0_' + (index - 1) + '.right +' + k * 2 + ' px)';
+      // }
 
       // 换行符存在时进行记录
-      if (stackChil[index].match(reg) && !stackChil[index].match(/\`/g)) {
-        lineWarp = stackChil[index].match(reg).length;
-      } else if (stackChil[index] === ' ') {
+      if (stack[index].match(reg) && !stack[index].match(/\`/g)) {
+        lineWarp = stack[index].match(reg).length;
+      } else if (stack[index] === ' ') {
         t.css.left = 'calc(hl0_' + (index - 1) + '.right - 8px)';
-        // console.log('1111');
-      } else if (stackChil[index].match(/\(/) || stackChil[index].match(/\[/)) {
+      } else if (stack[index].match(/\(/) || stack[index].match(/\[/)) {
         t.css.left = 'calc(hl0_' + (index - 1) + '.right + 4px)';
         leftBracket = 1;
       }
@@ -308,19 +327,17 @@ const phl = function (
     // 换行
     if (lineWarp) {
       t.css.top = 'calc(hl0_' + (index - 1) + '.top +' + 20 * (lineWarp + commentWarp) + ' px)';
-      // t.css.top = 'calc(hl0_'+ (index-1) +'.top + 20px)';
       t.css.left = '0';
       // 缩进问题
-      if (stackChil[index].match(reg) && stackChil[index].slice(2)) {
+      if (stack[index].match(reg) && stack[index].slice(2)) {
         t.css.left = 'calc(hl0_0.right)';
       }
       lineWarp = 0;
       commentWarp = 0;
     }
     // tab符号
-    if (typeof stackChil[index] === 'string' && stackChil[index].match(reg3)) {
-      // console.log(stackChil[index].match(reg3));
-      t.css.left = 'calc(hl0_' + index + '.right + ' + 18 * stackChil[index].match(reg3).length + 'px)';
+    if (typeof stack[index] === 'string' && stack[index].match(reg3)) {
+      t.css.left = 'calc(hl0_' + index + '.right + ' + 18 * stack[index].match(reg3).length + 'px)';
     }
 
     // 放入最后的数组
@@ -372,7 +389,7 @@ const phl = function (
   views.unshift(tips1);
 
   if (template.height == 'auto') {
-    template.height = height * 20 + 60 + 'px';
+    template.height = maxHeight * 20 + 60 + 'px';
   }
   if (template.width == 'auto') {
     template.width = maxWidth * 10.5 + 'px';
