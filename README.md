@@ -24,7 +24,7 @@ phl(
     CanvasNode: object, // 绑定的一个canvas元素
     canvas: CanvasRenderingContext2D,  // 将canvas通过getContext后得到的东西
     template: template,  // 生成图片的样式，下方有可配置项
-    code: string, // 要转换的代码(代码需用``包裹，同时确保第一行留有空格)
+    code: string, // 要转换的代码(代码需用``包裹)
     language: string // 转换代码的语言
 )
 ```
@@ -106,4 +106,3 @@ export default {
 >
 > - [x] 自动宽高
 > - [ ] 自定义主题
-
