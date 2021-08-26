@@ -125,9 +125,12 @@ const phl = function (
   let lineWarp = 0;
   // 多行注释记录数
   let commentWarp = 0;
-  // 左括号记录数
+  // 括号记录数
   let leftBracket = 0;
+  let rightBracket = 0;
 
+  // 小圆点颜色
+  let dotsColor = ['#E0443E', '#DEA123', '#1AAB29'];
   // 高度
   let maxHeight = 0;
   // 宽度
@@ -148,12 +151,49 @@ const phl = function (
         let tap1 = line.indexOf(line.match(reg2)[0]);
         line = line.slice(0, tap1) + line.slice(0, tap1) + line.slice(tap1);
       }
+      if (typeof line === 'string' && line.match(reg3)) {
+        line = line.replace(reg3, '  ');
+      }
       maxHeight++;
       return line;
     })
     .join('\n');
 
+  codeCopy = '\n' + codeCopy;
   let stack = hljs.highlight(codeCopy, { language: language })._emitter.root.children;
+
+  // 分离\n的方法
+  const stringSeparate = (stackI: string) => {
+    // 还没分离的部分
+    let start = stackI;
+
+    // 内部有多少\n
+    let nCount = stackI.match(reg);
+
+    if (stackI.match(/\)/)) {
+      let rightBrackets = stackI.indexOf(')');
+      stackMap.push(stackI.slice(0, rightBrackets));
+      start = stackI.slice(rightBrackets);
+    }
+
+    if (nCount !== null) {
+      while (nCount.length) {
+        let sNode = start.indexOf(nCount[0]);
+
+        // 前
+        if (start.slice(0, sNode)) {
+          stackMap.push(start.slice(0, sNode));
+        }
+        // 中: 弹出第一个已经匹配过的
+        stackMap.push(start.slice(sNode, sNode + 1));
+        // 后
+        start = start.slice(sNode + 1);
+
+        nCount.shift();
+      }
+    }
+    stackMap.push(start);
+  };
 
   // 将符号和换行符分离
   for (let i = 0; i < stack.length; i++) {
@@ -161,49 +201,24 @@ const phl = function (
       // string
       // 有换行符和字符的时候
       if (stack[i].match(reg) && stack[i].match(reg2)) {
-        // 还没分离的部分
-        let start = stack[i];
-        // 内部有多少\n
-        let nCount = stack[i].match(reg);
-
-        if (stack[i].match(/\)/)) {
-          let rightBrackets = stack[i].indexOf(')');
-          stackMap.push(stack[i].slice(0, rightBrackets));
-          start = stack[i].slice(rightBrackets);
-        }
-
-        while (nCount.length) {
-          let sNode = start.indexOf(nCount[0]);
-          // 前
-          if (start.slice(0, sNode)) {
-            stackMap.push(start.slice(0, sNode));
-          }
-          // 中: 弹出第一个已经匹配过的
-          stackMap.push(start.slice(sNode, sNode + 1));
-          // 后
-          start = start.slice(sNode + 1);
-
-          nCount.shift();
-        }
-        stackMap.push(start);
+        stringSeparate(stack[i]);
       } else if (stack[i].match(/\]/)) {
         // 右括号粘住的问题
         let rightMidBrackets = stack[i].indexOf(']');
 
         if (stack[i].match(/\)/)) {
           let rightBrackets = stack[i].indexOf(')');
-          stackMap.push(stack[i].slice(0, rightMidBrackets));
-          stackMap.push(stack[i].slice(rightMidBrackets, rightBrackets));
-          stackMap.push(stack[i].slice(rightBrackets));
+          stackMap.push(
+            stack[i].slice(0, rightMidBrackets),
+            stack[i].slice(rightMidBrackets, rightBrackets),
+            stack[i].slice(rightBrackets),
+          );
         } else {
-          stackMap.push(stack[i].slice(0, rightMidBrackets));
-          stackMap.push(stack[i].slice(rightMidBrackets));
+          stackMap.push(stack[i].slice(0, rightMidBrackets), stack[i].slice(rightMidBrackets));
         }
       } else if (stack[i].match(/\)/)) {
         let rightBrackets = stack[i].indexOf(')');
-
-        stackMap.push(stack[i].slice(0, rightBrackets));
-        stackMap.push(stack[i].slice(rightBrackets));
+        stackMap.push(stack[i].slice(0, rightBrackets), stack[i].slice(rightBrackets));
       } else {
         stackMap.push(stack[i]);
       }
@@ -226,6 +241,13 @@ const phl = function (
             stackMap.push(i);
           }
         }
+      } else if (
+        stack[i].kind === 'params' &&
+        typeof stack[i].children[0] === 'object' &&
+        stack[i].children[0].kind !== 'regexp'
+      ) {
+        // console.log(stack[i]);
+        stringSeparate(stack[i].children[0]);
       } else {
         stackMap.push(stack[i]);
       }
@@ -255,7 +277,7 @@ const phl = function (
 
     // 匹配为object时
     if (typeof stack[index] === 'object') {
-      let col;
+      let col: { color: string };
 
       // 有子项与没子项的区分
       if (!stack[index].children.length) {
@@ -266,10 +288,13 @@ const phl = function (
         (t.css.left = 'calc(hl0_' + (index - 1) + '.right + 1px)'), (col = styleMap.get(stack[index].kind));
       }
 
-      // 左括号美化
-      if (leftBracket) {
-        t.css.left = 'calc(hl0_' + (index - 1) + '.right - 5px)';
+      // 括号美化
+      if (leftBracket || rightBracket) {
+        if (stack[index] !== ';') {
+          t.css.left = 'calc(hl0_' + (index - 1) + '.right - 8px)';
+        }
         leftBracket = 0;
+        rightBracket = 0;
       }
 
       // 多行注释时
@@ -291,28 +316,25 @@ const phl = function (
 
       // 匹配为string时
     } else if (typeof stack[index] === 'string') {
-      // console.log(stack[index].match(reg22)?.length);
-
       t.text = stack[index];
       // 区分符号和字母
-      if (stack[index].match(RegExp(/[a-zA-Z]/g))) {
+      if (stack[index].match(RegExp(/^[a-zA-Z]/g))) {
         t.css.color = styleMap.get('string').color;
-      } else if (stack[index].match(RegExp(/=/g)) || stack[index].match(RegExp(/>/g))) {
+      } else if (stack[index].match(RegExp(/=/g))) {
         t.css.color = styleMap.get('attribute').color;
       } else {
         t.css.color = styleMap.get('sign').color;
       }
       t.css.left = 'calc(hl0_' + (index - 1) + '.right + 2px)';
 
-      // 左括号美化
-      if (leftBracket) {
-        t.css.left = 'calc(hl0_' + (index - 1) + '.right - 8px)';
+      // 括号美化
+      if (leftBracket || rightBracket) {
+        if (stack[index] !== ';') {
+          t.css.left = 'calc(hl0_' + (index - 1) + '.right - 10px)';
+        }
         leftBracket = 0;
+        rightBracket = 0;
       }
-
-      // if (stack[index].match(/\]/)) {
-      //   t.css.left = 'calc(hl0_' + (index - 1) + '.right - 4px)';
-      // }
 
       //调整空格位置
       // if (stack[index].match(reg22)?.length) {
@@ -325,9 +347,26 @@ const phl = function (
         lineWarp = stack[index].match(reg).length;
       } else if (stack[index] === ' ') {
         t.css.left = 'calc(hl0_' + (index - 1) + '.right - 8px)';
-      } else if (stack[index].match(/\(/) || stack[index].match(/\[/)) {
-        t.css.left = 'calc(hl0_' + (index - 1) + '.right + 4px)';
+      } else if (stack[index].match(/\(/) || stack[index].match(/\[/) || stack[index].match(/\{/)) {
+        switch (stack[index - 1]) {
+          case '(':
+          case '[':
+          case '{':
+            t.css.left = 'calc(hl0_' + (index - 1) + '.right - 10px)';
+            break;
+          case ' ':
+            t.css.left = 'calc(hl0_' + (index - 1) + '.right - 5px)';
+            break;
+          default:
+            t.css.left = 'calc(hl0_' + (index - 1) + '.right + 3px)';
+            break;
+        }
         leftBracket = 1;
+      } else if (stack[index] == ')' || stack[index] == ']' || stack[index] == '}') {
+        if (stack[index - 1] == '}') {
+          t.css.left = 'calc(hl0_' + (index - 1) + '.right - 9px)';
+        }
+        rightBracket = 1;
       }
     }
 
@@ -343,9 +382,9 @@ const phl = function (
       commentWarp = 0;
     }
     // tab符号
-    if (typeof stack[index] === 'string' && stack[index].match(reg3)) {
-      t.css.left = 'calc(hl0_' + index + '.right + ' + 18 * stack[index].match(reg3).length + 'px)';
-    }
+    // if (typeof stack[index] === 'string' && stack[index].match(reg3)) {
+    //   t.css.left = 'calc(hl0_' + index + '.right + ' + 9 * stack[index].match(reg3).length + 'px)';
+    // }
 
     // 放入最后的数组
     views.push(t);
@@ -355,45 +394,21 @@ const phl = function (
   views[0].css.left = '0';
 
   // 窗口小圆点
-  let tips1 = {
-    id: 'hl1_0',
-    type: 'rect',
-    css: {
-      top: '18px',
-      left: '18px',
-      height: '12px',
-      width: '12px',
-      color: '#E0443E',
-      borderRadius: '50%',
-    },
-  };
-  let tips2 = {
-    id: 'hl1_1',
-    type: 'rect',
-    css: {
-      top: '18px',
-      left: '38px',
-      height: '12px',
-      width: '12px',
-      color: '#DEA123',
-      borderRadius: '50%',
-    },
-  };
-  let tips3 = {
-    id: 'hl1_3',
-    type: 'rect',
-    css: {
-      top: '18px',
-      left: '58px',
-      height: '12px',
-      width: '12px',
-      color: '#1AAB29',
-      borderRadius: '50%',
-    },
-  };
-  views.unshift(tips3);
-  views.unshift(tips2);
-  views.unshift(tips1);
+  for (let t = 0; t < 3; t++) {
+    let dots = {
+      id: 'hl1_' + t,
+      type: 'rect',
+      css: {
+        top: '18px',
+        left: 18 + 20 * t + 'px',
+        height: '12px',
+        width: '12px',
+        color: dotsColor[t],
+        borderRadius: '50%',
+      },
+    };
+    views.unshift(dots);
+  }
 
   if (template.height == 'auto') {
     template.height = maxHeight * 20 + 60 + 'px';
