@@ -99,57 +99,67 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   let lineWarp = 0;
   let commentWarp = 0;
   let leftBracket = 0;
+  let rightBracket = 0;
+  let dotsColor = ["#E0443E", "#DEA123", "#1AAB29"];
   let maxHeight = 0;
   let maxWidth = 0;
   let codeCopy = code.split("\n").map((line, index) => {
     let width;
-    width = line.match(reg2)?.length + line.match(reg22)?.length + (line.match(reg3)?.length ? line.match(reg3)?.length : 0);
-    if (maxWidth < width) {
-      maxWidth = width ? width : 0;
-    }
+    let spaceLength = line.match(reg22)?.length;
+    if (spaceLength === void 0)
+      spaceLength = 0;
+    width = line.match(reg2)?.length + spaceLength + (line.match(reg3)?.length ? line.match(reg3)?.length : 0);
     if (line.match(reg22) && line.match(reg2)?.length) {
       let tap1 = line.indexOf(line.match(reg2)[0]);
       line = line.slice(0, tap1) + line.slice(0, tap1) + line.slice(tap1);
     }
+    if (typeof line === "string" && line.match(reg3)) {
+      line = line.replace(reg3, "  ");
+    }
+    if (maxWidth < width) {
+      maxWidth = width ? width : 0;
+    }
     maxHeight++;
     return line;
   }).join("\n");
+  codeCopy = "\n" + codeCopy;
   let stack = hljs.highlight(codeCopy, { language })._emitter.root.children;
+  const stringSeparate = (stackI) => {
+    let start = stackI;
+    let nCount = stackI.match(reg);
+    if (stackI.match(/\)/)) {
+      let rightBrackets = stackI.indexOf(")");
+      stackMap.push(stackI.slice(0, rightBrackets));
+      start = stackI.slice(rightBrackets);
+    }
+    if (nCount !== null) {
+      while (nCount.length) {
+        let sNode = start.indexOf(nCount[0]);
+        if (start.slice(0, sNode)) {
+          stackMap.push(start.slice(0, sNode));
+        }
+        stackMap.push(start.slice(sNode, sNode + 1));
+        start = start.slice(sNode + 1);
+        nCount.shift();
+      }
+    }
+    stackMap.push(start);
+  };
   for (let i = 0; i < stack.length; i++) {
     if (typeof stack[i] === "string") {
       if (stack[i].match(reg) && stack[i].match(reg2)) {
-        let start = stack[i];
-        let nCount = stack[i].match(reg);
-        if (stack[i].match(/\)/)) {
-          let rightBrackets = stack[i].indexOf(")");
-          stackMap.push(stack[i].slice(0, rightBrackets));
-          start = stack[i].slice(rightBrackets);
-        }
-        while (nCount.length) {
-          let sNode = start.indexOf(nCount[0]);
-          if (start.slice(0, sNode)) {
-            stackMap.push(start.slice(0, sNode));
-          }
-          stackMap.push(start.slice(sNode, sNode + 1));
-          start = start.slice(sNode + 1);
-          nCount.shift();
-        }
-        stackMap.push(start);
+        stringSeparate(stack[i]);
       } else if (stack[i].match(/\]/)) {
         let rightMidBrackets = stack[i].indexOf("]");
         if (stack[i].match(/\)/)) {
           let rightBrackets = stack[i].indexOf(")");
-          stackMap.push(stack[i].slice(0, rightMidBrackets));
-          stackMap.push(stack[i].slice(rightMidBrackets, rightBrackets));
-          stackMap.push(stack[i].slice(rightBrackets));
+          stackMap.push(stack[i].slice(0, rightMidBrackets), stack[i].slice(rightMidBrackets, rightBrackets), stack[i].slice(rightBrackets));
         } else {
-          stackMap.push(stack[i].slice(0, rightMidBrackets));
-          stackMap.push(stack[i].slice(rightMidBrackets));
+          stackMap.push(stack[i].slice(0, rightMidBrackets), stack[i].slice(rightMidBrackets));
         }
       } else if (stack[i].match(/\)/)) {
         let rightBrackets = stack[i].indexOf(")");
-        stackMap.push(stack[i].slice(0, rightBrackets));
-        stackMap.push(stack[i].slice(rightBrackets));
+        stackMap.push(stack[i].slice(0, rightBrackets), stack[i].slice(rightBrackets));
       } else {
         stackMap.push(stack[i]);
       }
@@ -169,6 +179,8 @@ const phl = function(CanvasNode, canvas, template, code, language) {
             stackMap.push(i2);
           }
         }
+      } else if (stack[i].kind === "params" && typeof stack[i].children[0] === "object" && stack[i].children[0].kind !== "regexp") {
+        stringSeparate(stack[i].children[0]);
       } else {
         stackMap.push(stack[i]);
       }
@@ -189,7 +201,7 @@ const phl = function(CanvasNode, canvas, template, code, language) {
         top: "calc(hl0_" + (index - 1) + ".top)",
         left: "calc(hl0_" + (index - 1) + ".right)",
         color: defaultStyle.default.color,
-        fontSize: "16px"
+        fontSize: "19px"
       }
     };
     if (typeof stack[index] === "object") {
@@ -201,11 +213,14 @@ const phl = function(CanvasNode, canvas, template, code, language) {
         t.text = stack[index].children.join("");
         t.css.left = "calc(hl0_" + (index - 1) + ".right + 1px)", col = styleMap.get(stack[index].kind);
       }
-      if (leftBracket) {
-        t.css.left = "calc(hl0_" + (index - 1) + ".right - 5px)";
+      if (leftBracket || rightBracket) {
+        if (stack[index] !== ";") {
+          t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
+        }
         leftBracket = 0;
+        rightBracket = 0;
       }
-      if (stack[index].children.length && stack[index].children[0].match !== null && stack[index].children[0]?.match(/\/\*\*/g)) {
+      if (stack[index].children.length && stack[index].children[0].kind !== "regexp" && stack[index].children[0].match !== null && stack[index].children[0]?.match(/\/\*\*/g)) {
         commentWarp += stack[index].children[0].match(reg)?.length ? stack[index].children[0].match(reg)?.length : 0;
       }
       if (!col) {
@@ -215,29 +230,53 @@ const phl = function(CanvasNode, canvas, template, code, language) {
       }
     } else if (typeof stack[index] === "string") {
       t.text = stack[index];
-      if (stack[index].match(RegExp(/[a-zA-Z]/g))) {
+      if (stack[index].match(RegExp(/^[a-zA-Z]/g))) {
         t.css.color = styleMap.get("string").color;
       } else if (stack[index].match(RegExp(/=/g))) {
         t.css.color = styleMap.get("attribute").color;
       } else {
+        if (stack[index].match(reg2) !== null) {
+          if (stack[index].match(reg2).length !== 1)
+            maxWidth = maxWidth + 0.6 * stack[index].match(reg2).length;
+        }
         t.css.color = styleMap.get("sign").color;
       }
       t.css.left = "calc(hl0_" + (index - 1) + ".right + 2px)";
-      if (leftBracket) {
-        t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
+      if (leftBracket || rightBracket) {
+        if (stack[index] !== ";") {
+          t.css.left = "calc(hl0_" + (index - 1) + ".right - 10px)";
+        }
         leftBracket = 0;
+        rightBracket = 0;
       }
       if (stack[index].match(reg) && !stack[index].match(/\`/g)) {
         lineWarp = stack[index].match(reg).length;
       } else if (stack[index] === " ") {
         t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
-      } else if (stack[index].match(/\(/) || stack[index].match(/\[/)) {
-        t.css.left = "calc(hl0_" + (index - 1) + ".right + 4px)";
+      } else if (stack[index].match(/\(/) || stack[index].match(/\[/) || stack[index].match(/\{/)) {
+        switch (stack[index - 1]) {
+          case "(":
+          case "[":
+          case "{":
+            t.css.left = "calc(hl0_" + (index - 1) + ".right - 10px)";
+            break;
+          case " ":
+            t.css.left = "calc(hl0_" + (index - 1) + ".right - 5px)";
+            break;
+          default:
+            t.css.left = "calc(hl0_" + (index - 1) + ".right + 3px)";
+            break;
+        }
         leftBracket = 1;
+      } else if (stack[index] == ")" || stack[index] == "]" || stack[index] == "}") {
+        if (stack[index - 1] == "}") {
+          t.css.left = "calc(hl0_" + (index - 1) + ".right - 9px)";
+        }
+        rightBracket = 1;
       }
     }
     if (lineWarp) {
-      t.css.top = "calc(hl0_" + (index - 1) + ".top +" + 20 * (lineWarp + commentWarp) + " px)";
+      t.css.top = "calc(hl0_" + (index - 1) + ".top +" + 23 * (lineWarp + commentWarp) + " px)";
       t.css.left = "0";
       if (stack[index].match(reg) && stack[index].slice(2)) {
         t.css.left = "calc(hl0_0.right)";
@@ -245,58 +284,31 @@ const phl = function(CanvasNode, canvas, template, code, language) {
       lineWarp = 0;
       commentWarp = 0;
     }
-    if (typeof stack[index] === "string" && stack[index].match(reg3)) {
-      t.css.left = "calc(hl0_" + index + ".right + " + 18 * stack[index].match(reg3).length + "px)";
-    }
     views.push(t);
   }
   views[0].css.top = "55px";
   views[1].css.left = "calc(hl0_0.right + 0px)";
   views[0].css.left = "0";
-  let tips1 = {
-    id: "hl1_0",
-    type: "rect",
-    css: {
-      top: "18px",
-      left: "18px",
-      height: "12px",
-      width: "12px",
-      color: "#E0443E",
-      borderRadius: "50%"
-    }
-  };
-  let tips2 = {
-    id: "hl1_1",
-    type: "rect",
-    css: {
-      top: "18px",
-      left: "38px",
-      height: "12px",
-      width: "12px",
-      color: "#DEA123",
-      borderRadius: "50%"
-    }
-  };
-  let tips3 = {
-    id: "hl1_3",
-    type: "rect",
-    css: {
-      top: "18px",
-      left: "58px",
-      height: "12px",
-      width: "12px",
-      color: "#1AAB29",
-      borderRadius: "50%"
-    }
-  };
-  views.unshift(tips3);
-  views.unshift(tips2);
-  views.unshift(tips1);
+  for (let t = 0; t < 3; t++) {
+    let dots = {
+      id: "hl1_" + t,
+      type: "rect",
+      css: {
+        top: "18px",
+        left: 18 + 20 * t + "px",
+        height: "12px",
+        width: "12px",
+        color: dotsColor[t],
+        borderRadius: "50%"
+      }
+    };
+    views.unshift(dots);
+  }
   if (template.height == "auto") {
-    template.height = maxHeight * 20 + 60 + "px";
+    template.height = maxHeight * 23 + 55 + "px";
   }
   if (template.width == "auto") {
-    template.width = maxWidth * 10.5 + "px";
+    template.width = maxWidth * 12 + "px";
   }
   CanvasNode.width = toPx(template.width);
   CanvasNode.height = toPx(template.height);
@@ -305,4 +317,4 @@ const phl = function(CanvasNode, canvas, template, code, language) {
   pen.paint();
 };
 
-export default phl;
+export { phl as default };
