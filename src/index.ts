@@ -140,19 +140,24 @@ const phl = function (
     .split('\n')
     .map((line, index) => {
       let width: number;
-      width =
-        line.match(reg2)?.length +
-        line.match(reg22)?.length +
-        (line.match(reg3)?.length ? line.match(reg3)?.length : 0);
-      if (maxWidth < width) {
-        maxWidth = width ? width : 0;
-      }
+      let spaceLength: any = line.match(reg22)?.length;
+      if (spaceLength === undefined) spaceLength = 0;
+      width = line.match(reg2)?.length + spaceLength + (line.match(reg3)?.length ? line.match(reg3)?.length : 0);
+
       if (line.match(reg22) && line.match(reg2)?.length) {
         let tap1 = line.indexOf(line.match(reg2)[0]);
         line = line.slice(0, tap1) + line.slice(0, tap1) + line.slice(tap1);
       }
+      // if (line.match('，') || line.match('。')) {
+      //   // 中文时
+      //   width =
+      //     1.5 * line.match(reg2)?.length + 0.5*spaceLength + (line.match(reg3)?.length ? line.match(reg3)?.length : 0);
+      // }
       if (typeof line === 'string' && line.match(reg3)) {
         line = line.replace(reg3, '  ');
+      }
+      if (maxWidth < width) {
+        maxWidth = width ? width : 0;
       }
       maxHeight++;
       return line;
@@ -271,7 +276,7 @@ const phl = function (
         top: 'calc(hl0_' + (index - 1) + '.top)',
         left: 'calc(hl0_' + (index - 1) + '.right)',
         color: defaultStyle.default.color,
-        fontSize: '16px',
+        fontSize: '19px',
       },
     };
 
@@ -323,6 +328,9 @@ const phl = function (
       } else if (stack[index].match(RegExp(/=/g))) {
         t.css.color = styleMap.get('attribute').color;
       } else {
+        if (stack[index].match(reg2) !== null) {
+          if (stack[index].match(reg2).length !== 1) maxWidth = maxWidth + 0.6 * stack[index].match(reg2).length;
+        }
         t.css.color = styleMap.get('sign').color;
       }
       t.css.left = 'calc(hl0_' + (index - 1) + '.right + 2px)';
@@ -372,7 +380,7 @@ const phl = function (
 
     // 换行
     if (lineWarp) {
-      t.css.top = 'calc(hl0_' + (index - 1) + '.top +' + 20 * (lineWarp + commentWarp) + ' px)';
+      t.css.top = 'calc(hl0_' + (index - 1) + '.top +' + 23 * (lineWarp + commentWarp) + ' px)';
       t.css.left = '0';
       // 缩进问题
       if (stack[index].match(reg) && stack[index].slice(2)) {
@@ -409,12 +417,24 @@ const phl = function (
     };
     views.unshift(dots);
   }
+  // vscode插件使用
+  // views.unshift({
+  //   id: 'hl1_' + 4,
+  //   text: 'VSCode插件  前端每日一题',
+  //   type: 'text',
+  //   css: {
+  //     top: '14px',
+  //     left: 18 + 20 * 4 + 'px',
+  //     fontSize: '17px',
+  //     color: '#41535b',
+  //   },
+  // });
 
   if (template.height == 'auto') {
-    template.height = maxHeight * 20 + 60 + 'px';
+    template.height = maxHeight * 23 + 55 + 'px';
   }
   if (template.width == 'auto') {
-    template.width = maxWidth * 10.5 + 'px';
+    template.width = maxWidth * 12 + 'px';
   }
 
   CanvasNode.width = toPx(template.width);
