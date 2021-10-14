@@ -2,7 +2,7 @@
 
 一个基于 painter 和 highlight.js 实现的高亮代码图片生成工具，用于方便用户快速分享自己的代码片段。
 
-使用场景：一些不支持代码高亮的平台来分享自己的代码，VsCode 插件（[前端每日一题](https://github.com/Huang-LM/front-end-daily-question)）等。
+使用场景：一些不支持代码高亮的平台来分享自己的代码，VSCode 插件（[前端每日一题](https://github.com/Huang-LM/front-end-daily-question)）等。
 
 ### 下载依赖
 
