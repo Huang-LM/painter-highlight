@@ -42,7 +42,7 @@ template = {
 
 ### 附一个 vue 使用的案例
 
-![展示](https://bu.dusays.com/2021/10/12/4da7fbcc2da73.png)
+![template2.png](https://i.loli.net/2021/10/14/2qxOBmuJISnXFEl.png)
 
 ```vue
 <template>
