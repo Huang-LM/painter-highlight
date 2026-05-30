@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "rollup -c -w rollup.config.ts",
     "build": "rollup -c rollup.config.publish.ts",
-    "lint": "eslint --fix --ext .ts src"
+    "lint": "eslint --fix --ext .ts src",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "demo": "esbuild demo/demo.ts --bundle --servedir=demo --outfile=demo/bundle.js"
   },
   "repository": {
     "type": "git",
@@ -48,7 +51,8 @@
     "rollup-plugin-typescript2": "^0.30.0",
     "ts-node": "^10.1.0",
     "tslib": "^2.3.0",
-    "typescript": "^4.3.5"
+    "typescript": "^4.3.5",
+    "vitest": "^1.6.0"
   },
   "dependencies": {
     "highlight.js": "^11.1.0",
