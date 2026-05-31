@@ -9,7 +9,7 @@
     "lint": "eslint --fix --ext .ts src",
     "test": "vitest run",
     "test:watch": "vitest",
-    "demo": "esbuild demo/demo.ts --bundle --servedir=demo --outfile=demo/bundle.js"
+    "demo": "node demo/build.mjs --serve"
   },
   "repository": {
     "type": "git",
