@@ -1,0 +1,8 @@
+src/**/*.test.ts
+demo/
+docs/
+.github/
+vitest.config.ts
+tsconfig.json
+rollup.config.ts
+template/
