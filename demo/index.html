@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <title>painter-highlight 双渲染器对比</title>
+    <style>
+      body { font-family: sans-serif; margin: 20px; background: #1a1a1a; color: #eee; }
+      .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+      textarea { width: 100%; height: 160px; font-family: monospace; }
+      .stage { display: flex; gap: 24px; flex-wrap: wrap; }
+      .panel { flex: 1; min-width: 360px; }
+      .panel h3 { margin: 8px 0; }
+      canvas { max-width: 100%; border: 1px solid #444; }
+      select, input, button { padding: 4px 8px; }
+    </style>
+  </head>
+  <body>
+    <h2>painter-highlight：左 A(painter-kernel) vs 右 B(canvas)</h2>
+    <div class="controls">
+      <label>预设 <select id="preset"></select></label>
+      <label>语言 <input id="lang" value="typescript" /></label>
+      <label>主题
+        <select id="theme">
+          <option>githubDark</option>
+          <option>dracula</option>
+          <option>oneDark</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="lineNumber" /> 行号</label>
+      <label>标题 <input id="title" value="demo.ts" /></label>
+      <button id="render">重新渲染</button>
+    </div>
+    <textarea id="code"></textarea>
+    <div class="stage">
+      <div class="panel"><h3>A: painter-kernel</h3><canvas id="canvasA"></canvas></div>
+      <div class="panel"><h3>B: canvas</h3><canvas id="canvasB"></canvas></div>
+    </div>
+    <script src="./bundle.js"></script>
+  </body>
+</html>
