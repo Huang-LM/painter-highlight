@@ -7,6 +7,7 @@
     "module": "esnext", // 模块类型
     "moduleResolution": "node",
     "allowJs": false, // 是否编辑js文件
+    "skipLibCheck": true, // 跳过 .d.ts 检查（painter-kernel 的 pen.d.ts 依赖 react 类型）
     "strict": false, // 严格模式
     "noUnusedLocals": true, // 未使用变量报错
     "experimentalDecorators": true, // 启动装饰器
