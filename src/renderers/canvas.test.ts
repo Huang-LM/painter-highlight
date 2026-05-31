@@ -99,4 +99,25 @@ describe('renderCanvas', () => {
     expect(node.width).toBeGreaterThan(0);
     expect(node.height).toBeGreaterThan(0);
   });
+
+  it('传入 title 时绘制标题文本', () => {
+    const { ctx, calls } = makeCtx();
+    const doc: CodeDoc = { lines: [{ tokens: [{ text: 'a', scope: '' }] }], maxColumns: 1 };
+    renderCanvas(doc, theme, {
+      canvasNode: {},
+      ctx,
+      code: '',
+      language: 'javascript',
+      title: 'demo.ts',
+    });
+    const texts = calls.filter((c) => c.type === 'fillText').map((c) => c.args[0]);
+    expect(texts).toContain('demo.ts');
+  });
+
+  it('绘制三个窗口圆点（arc 调用三次）', () => {
+    const { ctx } = makeCtx();
+    const doc: CodeDoc = { lines: [{ tokens: [{ text: 'a', scope: '' }] }], maxColumns: 1 };
+    renderCanvas(doc, theme, { canvasNode: {}, ctx, code: '', language: 'javascript' });
+    expect((ctx.arc as any).mock.calls.length).toBe(3);
+  });
 });

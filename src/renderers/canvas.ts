@@ -33,6 +33,8 @@ function paintBackground(
 ) {
   const bg = theme.background;
   if (bg.startsWith('linear')) {
+    // 简化：仅取渐变串里的 hex 端点做对角线渐变。
+    // rgb()/rgba()/命名色不被识别，会回退到 #000——内置主题均为纯 hex，无影响。
     const g = ctx.createLinearGradient(0, 0, w, h);
     const colors = bg.match(/#[0-9a-fA-F]{3,8}/g) || ['#000', '#000'];
     g.addColorStop(0, colors[0]);
