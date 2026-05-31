@@ -1,6 +1,6 @@
 import { Pen } from 'painter-kernel';
 import { CodeDoc, Theme, RenderOptions } from '../core/types';
-import { computeMetrics } from './metrics';
+import { computeMetrics, Metrics } from './metrics';
 
 const MONO_FONT = 'Menlo, Consolas, "Courier New", monospace';
 const DOT_COLORS = ['#ff5f56', '#ffbd2e', '#27c93f'];
@@ -13,11 +13,11 @@ export interface IPalette {
   views: any[];
 }
 
-export function buildPalette(doc: CodeDoc, theme: Theme, opt: RenderOptions): IPalette {
+// 由 RenderOptions 计算度量（含 charWidth 测量），供 buildPalette / renderKernel 复用
+function metricsOf(doc: CodeDoc, opt: RenderOptions): Metrics {
   const fontSize = opt.fontSize ?? 14;
   const charWidth = opt.ctx.measureText('M').width || fontSize * 0.6;
-
-  const m = computeMetrics(doc, {
+  return computeMetrics(doc, {
     fontSize,
     charWidth,
     lineNumber: opt.lineNumber,
@@ -25,6 +25,16 @@ export function buildPalette(doc: CodeDoc, theme: Theme, opt: RenderOptions): IP
     width: opt.width,
     height: opt.height,
   });
+}
+
+export function buildPalette(
+  doc: CodeDoc,
+  theme: Theme,
+  opt: RenderOptions,
+  metrics?: Metrics,
+): IPalette {
+  const fontSize = opt.fontSize ?? 14;
+  const m = metrics ?? metricsOf(doc, opt);
 
   const views: any[] = [];
 
@@ -108,17 +118,8 @@ export async function renderKernel(
   theme: Theme,
   opt: RenderOptions,
 ): Promise<void> {
-  const palette = buildPalette(doc, theme, opt);
-  const fontSize = opt.fontSize ?? 14;
-  const charWidth = opt.ctx.measureText('M').width || fontSize * 0.6;
-  const m = computeMetrics(doc, {
-    fontSize,
-    charWidth,
-    lineNumber: opt.lineNumber,
-    title: opt.title,
-    width: opt.width,
-    height: opt.height,
-  });
+  const m = metricsOf(doc, opt);
+  const palette = buildPalette(doc, theme, opt, m);
   opt.canvasNode.width = m.width;
   opt.canvasNode.height = m.height;
 
