@@ -1,6 +1,6 @@
 // 带样式作用域的最小文本单元
 export interface Token {
-  text: string; // 纯文本，不含 \n
+  text: string; // 文本；tokenize 阶段可能含 \n，layout 切行后 CodeLine 内的 token 不含 \n
   scope: string; // highlight.js scope（去 hljs- 前缀），普通文本为 ''
 }
 
