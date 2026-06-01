@@ -57,6 +57,6 @@
   },
   "dependencies": {
     "highlight.js": "^11.1.0",
-    "painter-kernel": "^1.0.5"
+    "painter-kernel": "1.0.5"
   }
 }

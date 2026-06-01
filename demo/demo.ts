@@ -32,11 +32,32 @@ function currentOptionsBase() {
 }
 
 async function render() {
-  const base = currentOptionsBase();
-  const a = $('canvasA');
-  const b = $('canvasB');
-  await phl({ canvasNode: a, ctx: a.getContext('2d'), renderer: 'kernel', ...base });
-  await phl({ canvasNode: b, ctx: b.getContext('2d'), renderer: 'canvas', ...base });
+  try {
+    console.log('[render] 开始渲染...');
+    const base = currentOptionsBase();
+    console.log('[render] 获取 canvas 元素...');
+    const a = $('canvasA');
+    const b = $('canvasB');
+
+    console.log('[render] 开始渲染 kernel 渲染器...');
+    const kernelPromise = phl({ canvasNode: a, ctx: a.getContext('2d'), renderer: 'kernel', ...base });
+    const kernelTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('kernel 渲染超时（>10秒）')), 10000)
+    );
+    await Promise.race([kernelPromise, kernelTimeout]);
+    console.log('[render] kernel 渲染完成');
+
+    console.log('[render] 开始渲染 canvas 渲染器...');
+    const canvasPromise = phl({ canvasNode: b, ctx: b.getContext('2d'), renderer: 'canvas', ...base });
+    const canvasTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('canvas 渲染超时（>10秒）')), 10000)
+    );
+    await Promise.race([canvasPromise, canvasTimeout]);
+    console.log('[render] canvas 渲染完成');
+  } catch (error) {
+    console.error('渲染失败:', error);
+    alert(`渲染失败: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 function initPresets() {
@@ -59,5 +80,13 @@ function initPresets() {
 
 $('render').onclick = render;
 ['theme', 'lineNumber', 'title'].forEach((id) => ($(id).onchange = render));
-initPresets();
-render();
+try {
+  console.log('[init] 开始初始化...');
+  initPresets();
+  console.log('[init] 预设初始化完成，开始首次渲染...');
+  render();
+  console.log('[init] 首次渲染完成');
+} catch (error) {
+  console.error('初始化失败:', error);
+  alert(`初始化失败: ${error instanceof Error ? error.message : String(error)}`);
+}

@@ -1,320 +1,405 @@
 import hljs from 'highlight.js';
-import { toPx, Pen } from 'painter-kernel';
+import { Pen } from 'painter-kernel';
 
-const phl = function(CanvasNode, canvas, template, code, language) {
-  let views = [];
-  let defaultStyle = {
-    default: {
-      color: "#55b5db"
-    },
-    property: {
-      color: "#a074c4"
-    },
-    comment: {
-      color: "#41535b"
-    },
-    literal: {
-      color: "#ee3300ef"
-    },
-    doctag: {
-      color: "#ff7b72"
-    },
-    built_in: {
-      color: "#55b5db"
-    },
-    keyword: {
-      color: "#e6cd69"
-    },
-    "template-tag": {
-      color: "#ff7b72"
-    },
-    "template-variable": {
-      color: "#9fca56"
-    },
-    type: {
-      color: "#9fca56"
-    },
-    string: {
-      color: "#55b5db"
-    },
-    attr: {
-      color: "#ff7b72"
-    },
-    number: {
-      color: "#cd3f45"
-    },
-    params: {
-      color: "#55b5db"
-    },
-    "variable.language": {
-      color: "#55b5db"
-    },
-    "variable.constant": {
-      color: "#55b5db"
-    },
-    subst: {
-      color: "Purple"
-    },
-    title: {
-      color: "#d2a8ff"
-    },
-    "title.class": {
-      color: "#df88df"
-    },
-    "title.class.inherited": {
-      color: "#dda8ff"
-    },
-    "title.function": {
-      color: "#a074c4"
-    },
-    deletion: {
-      color: "#ffdcd7",
-      backgroundColor: "#67060c"
-    },
-    addition: {
-      color: "#aff5b4",
-      backgroundColor: "#033a16"
-    },
-    strong: {
-      color: "#c9d1d9",
-      fontWeight: "bold"
-    },
-    emphasis: {
-      color: "#c9d1d9",
-      fontStyle: "italic"
-    },
-    sign: {
-      color: "#eee"
-    },
-    attribute: {
-      color: "#9fca56"
-    }
+function decodeEntities(s) {
+  return s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+}
+function classToScope(cls) {
+  const first = cls.trim().split(/\s+/)[0] || "";
+  return first.startsWith("hljs-") ? first.slice(5) : "";
+}
+function parseHtml(html) {
+  const tokens = [];
+  const scopeStack = [];
+  const tagRe = /<span class="([^"]*)">|<\/span>/g;
+  let last = 0;
+  let m;
+  const pushText = (raw) => {
+    if (!raw)
+      return;
+    const text = decodeEntities(raw);
+    if (text === "")
+      return;
+    tokens.push({ text, scope: scopeStack[scopeStack.length - 1] || "" });
   };
-  const styleMap = new Map(Object.entries(defaultStyle));
-  let stackMap = [];
-  const reg = RegExp(/\n/g);
-  const reg2 = RegExp(/([^\s])/g);
-  const reg22 = RegExp(/([\s])/g);
-  const reg3 = RegExp(/\t/g);
-  let lineWarp = 0;
-  let commentWarp = 0;
-  let leftBracket = 0;
-  let rightBracket = 0;
-  let dotsColor = ["#E0443E", "#DEA123", "#1AAB29"];
-  let maxHeight = 0;
-  let maxWidth = 0;
-  let codeCopy = code.split("\n").map((line, index) => {
-    let width;
-    let spaceLength = line.match(reg22)?.length;
-    if (spaceLength === void 0)
-      spaceLength = 0;
-    width = line.match(reg2)?.length + spaceLength + (line.match(reg3)?.length ? line.match(reg3)?.length : 0);
-    if (line.match(reg22) && line.match(reg2)?.length) {
-      let tap1 = line.indexOf(line.match(reg2)[0]);
-      line = line.slice(0, tap1) + line.slice(0, tap1) + line.slice(tap1);
-    }
-    if (typeof line === "string" && line.match(reg3)) {
-      line = line.replace(reg3, "  ");
-    }
-    if (maxWidth < width) {
-      maxWidth = width ? width : 0;
-    }
-    maxHeight++;
-    return line;
-  }).join("\n");
-  codeCopy = "\n" + codeCopy;
-  let stack = hljs.highlight(codeCopy, { language })._emitter.root.children;
-  const stringSeparate = (stackI) => {
-    let start = stackI;
-    let nCount = stackI.match(reg);
-    if (stackI.match(/\)/)) {
-      let rightBrackets = stackI.indexOf(")");
-      stackMap.push(stackI.slice(0, rightBrackets));
-      start = stackI.slice(rightBrackets);
-    }
-    if (nCount !== null) {
-      while (nCount.length) {
-        let sNode = start.indexOf(nCount[0]);
-        if (start.slice(0, sNode)) {
-          stackMap.push(start.slice(0, sNode));
-        }
-        stackMap.push(start.slice(sNode, sNode + 1));
-        start = start.slice(sNode + 1);
-        nCount.shift();
-      }
-    }
-    stackMap.push(start);
-  };
-  for (let i = 0; i < stack.length; i++) {
-    if (typeof stack[i] === "string") {
-      if (stack[i].match(reg) && stack[i].match(reg2)) {
-        stringSeparate(stack[i]);
-      } else if (stack[i].match(/\]/)) {
-        let rightMidBrackets = stack[i].indexOf("]");
-        if (stack[i].match(/\)/)) {
-          let rightBrackets = stack[i].indexOf(")");
-          stackMap.push(stack[i].slice(0, rightMidBrackets), stack[i].slice(rightMidBrackets, rightBrackets), stack[i].slice(rightBrackets));
-        } else {
-          stackMap.push(stack[i].slice(0, rightMidBrackets), stack[i].slice(rightMidBrackets));
-        }
-      } else if (stack[i].match(/\)/)) {
-        let rightBrackets = stack[i].indexOf(")");
-        stackMap.push(stack[i].slice(0, rightBrackets), stack[i].slice(rightBrackets));
-      } else {
-        stackMap.push(stack[i]);
-      }
+  while ((m = tagRe.exec(html)) !== null) {
+    pushText(html.slice(last, m.index));
+    if (m[0].startsWith("</")) {
+      scopeStack.pop();
     } else {
-      if (stack[i].kind === "comment") {
-        stackMap.push(stack[i]);
-      } else if (stack[i].kind === "property" && stack[i].children[0].children) {
-        stackMap.push(stack[i].children[0].children[0]);
-      } else if (stack[i].children.length > 1) {
-        let stackCC = stack[i].children;
-        for (let i2 of stackCC) {
-          if (typeof i2 === "string" && i2.match(/\)/)?.length) {
-            let rightBrackets = i2.indexOf(")");
-            stackMap.push(i2.slice(0, rightBrackets + 1));
-            stackMap.push(i2.slice(rightBrackets + 1));
-          } else {
-            stackMap.push(i2);
-          }
-        }
-      } else if (stack[i].kind === "params" && typeof stack[i].children[0] === "object" && stack[i].children[0].kind !== "regexp") {
-        stringSeparate(stack[i].children[0]);
-      } else {
-        stackMap.push(stack[i]);
-      }
+      scopeStack.push(classToScope(m[1]));
     }
+    last = tagRe.lastIndex;
   }
-  let ss = [];
-  stackMap.forEach((data) => {
-    if (data !== "")
-      ss.push(data);
-  });
-  stack = ss;
-  for (let index = 0; index < stack.length; index++) {
-    let t = {
-      id: "hl0_" + index,
-      text: "",
-      type: "text",
-      css: {
-        top: "calc(hl0_" + (index - 1) + ".top)",
-        left: "calc(hl0_" + (index - 1) + ".right)",
-        color: defaultStyle.default.color,
-        fontSize: "19px"
-      }
-    };
-    if (typeof stack[index] === "object") {
-      let col;
-      if (!stack[index].children.length) {
-        t.text = stack[index].children;
-        t.css.left = "calc(hl0_" + (index - 1) + ".right - 5px)", col = styleMap.get(stack[index].kind);
-      } else {
-        t.text = stack[index].children.join("");
-        t.css.left = "calc(hl0_" + (index - 1) + ".right + 1px)", col = styleMap.get(stack[index].kind);
-      }
-      if (leftBracket || rightBracket) {
-        if (stack[index] !== ";") {
-          t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
-        }
-        leftBracket = 0;
-        rightBracket = 0;
-      }
-      if (stack[index].children.length && stack[index].children[0].kind !== "regexp" && stack[index].children[0].match !== null && stack[index].children[0]?.match(/\/\*\*/g)) {
-        commentWarp += stack[index].children[0].match(reg)?.length ? stack[index].children[0].match(reg)?.length : 0;
-      }
-      if (!col) {
-        t.css.color = styleMap.get("default").color;
-      } else {
-        t.css.color = col.color;
-      }
-    } else if (typeof stack[index] === "string") {
-      t.text = stack[index];
-      if (stack[index].match(RegExp(/^[a-zA-Z]/g))) {
-        t.css.color = styleMap.get("string").color;
-      } else if (stack[index].match(RegExp(/=/g))) {
-        t.css.color = styleMap.get("attribute").color;
-      } else {
-        if (stack[index].match(reg2) !== null) {
-          if (stack[index].match(reg2).length !== 1)
-            maxWidth = maxWidth + 0.6 * stack[index].match(reg2).length;
-        }
-        t.css.color = styleMap.get("sign").color;
-      }
-      t.css.left = "calc(hl0_" + (index - 1) + ".right + 2px)";
-      if (leftBracket || rightBracket) {
-        if (stack[index] !== ";") {
-          t.css.left = "calc(hl0_" + (index - 1) + ".right - 10px)";
-        }
-        leftBracket = 0;
-        rightBracket = 0;
-      }
-      if (stack[index].match(reg) && !stack[index].match(/\`/g)) {
-        lineWarp = stack[index].match(reg).length;
-      } else if (stack[index] === " ") {
-        t.css.left = "calc(hl0_" + (index - 1) + ".right - 8px)";
-      } else if (stack[index].match(/\(/) || stack[index].match(/\[/) || stack[index].match(/\{/)) {
-        switch (stack[index - 1]) {
-          case "(":
-          case "[":
-          case "{":
-            t.css.left = "calc(hl0_" + (index - 1) + ".right - 10px)";
-            break;
-          case " ":
-            t.css.left = "calc(hl0_" + (index - 1) + ".right - 5px)";
-            break;
-          default:
-            t.css.left = "calc(hl0_" + (index - 1) + ".right + 3px)";
-            break;
-        }
-        leftBracket = 1;
-      } else if (stack[index] == ")" || stack[index] == "]" || stack[index] == "}") {
-        if (stack[index - 1] == "}") {
-          t.css.left = "calc(hl0_" + (index - 1) + ".right - 9px)";
-        }
-        rightBracket = 1;
-      }
-    }
-    if (lineWarp) {
-      t.css.top = "calc(hl0_" + (index - 1) + ".top +" + 23 * (lineWarp + commentWarp) + " px)";
-      t.css.left = "0";
-      if (stack[index].match(reg) && stack[index].slice(2)) {
-        t.css.left = "calc(hl0_0.right)";
-      }
-      lineWarp = 0;
-      commentWarp = 0;
-    }
-    views.push(t);
+  pushText(html.slice(last));
+  return tokens;
+}
+function tokenize(code, language) {
+  if (code === "")
+    return [];
+  if (!hljs.getLanguage(language)) {
+    return [{ text: code, scope: "" }];
   }
-  views[0].css.top = "55px";
-  views[1].css.left = "calc(hl0_0.right + 0px)";
-  views[0].css.left = "0";
-  for (let t = 0; t < 3; t++) {
-    let dots = {
-      id: "hl1_" + t,
-      type: "rect",
-      css: {
-        top: "18px",
-        left: 18 + 20 * t + "px",
-        height: "12px",
-        width: "12px",
-        color: dotsColor[t],
-        borderRadius: "50%"
-      }
-    };
-    views.unshift(dots);
-  }
-  if (template.height == "auto") {
-    template.height = maxHeight * 23 + 55 + "px";
-  }
-  if (template.width == "auto") {
-    template.width = maxWidth * 12 + "px";
-  }
-  CanvasNode.width = toPx(template.width);
-  CanvasNode.height = toPx(template.height);
-  template.views = views;
-  const pen = new Pen(canvas, template);
-  pen.paint();
-};
+  const html = hljs.highlight(code, { language, ignoreIllegals: true }).value;
+  return parseHtml(html);
+}
 
-export { phl as default };
+function isWide(ch) {
+  const c = ch.codePointAt(0) || 0;
+  return c >= 4352 && c <= 4447 || c >= 11904 && c <= 42191 || c >= 44032 && c <= 55203 || c >= 63744 && c <= 64255 || c >= 65072 && c <= 65103 || c >= 65280 && c <= 65376 || c >= 65504 && c <= 65510;
+}
+function columnsOf(text) {
+  let cols = 0;
+  for (const ch of text)
+    cols += isWide(ch) ? 2 : 1;
+  return cols;
+}
+function layout(tokens) {
+  const lines = [{ tokens: [] }];
+  let maxColumns = 0;
+  let curCols = 0;
+  const endLine = () => {
+    if (curCols > maxColumns)
+      maxColumns = curCols;
+    curCols = 0;
+    lines.push({ tokens: [] });
+  };
+  for (const tok of tokens) {
+    const parts = tok.text.split("\n");
+    for (let i = 0; i < parts.length; i++) {
+      if (i > 0)
+        endLine();
+      if (parts[i] !== "") {
+        lines[lines.length - 1].tokens.push({ text: parts[i], scope: tok.scope });
+        curCols += columnsOf(parts[i]);
+      }
+    }
+  }
+  if (curCols > maxColumns)
+    maxColumns = curCols;
+  return { lines, maxColumns };
+}
+
+const githubDark = {
+  name: "githubDark",
+  background: "#0d1117",
+  defaultColor: "#c9d1d9",
+  lineNumberColor: "#484f58",
+  titleColor: "#8b949e",
+  scopes: {
+    keyword: "#ff7b72",
+    built_in: "#ffa657",
+    type: "#ffa657",
+    literal: "#79c0ff",
+    number: "#79c0ff",
+    string: "#a5d6ff",
+    comment: "#8b949e",
+    title: "#d2a8ff",
+    "function": "#d2a8ff",
+    params: "#c9d1d9",
+    attr: "#79c0ff",
+    attribute: "#79c0ff",
+    property: "#79c0ff",
+    variable: "#ffa657",
+    operator: "#ff7b72",
+    subst: "#c9d1d9",
+    "meta": "#79c0ff",
+    "tag": "#7ee787",
+    "name": "#7ee787",
+    "selector-tag": "#7ee787",
+    regexp: "#a5d6ff",
+    symbol: "#79c0ff",
+    addition: "#aff5b4",
+    deletion: "#ffdcd7"
+  }
+};
+const dracula = {
+  name: "dracula",
+  background: "#282a36",
+  defaultColor: "#f8f8f2",
+  lineNumberColor: "#6272a4",
+  titleColor: "#bd93f9",
+  scopes: {
+    keyword: "#ff79c6",
+    built_in: "#8be9fd",
+    type: "#8be9fd",
+    literal: "#bd93f9",
+    number: "#bd93f9",
+    string: "#f1fa8c",
+    comment: "#6272a4",
+    title: "#50fa7b",
+    "function": "#50fa7b",
+    params: "#ffb86c",
+    attr: "#50fa7b",
+    attribute: "#50fa7b",
+    property: "#f8f8f2",
+    variable: "#f8f8f2",
+    operator: "#ff79c6",
+    subst: "#f8f8f2",
+    "meta": "#ff79c6",
+    "tag": "#ff79c6",
+    "name": "#8be9fd",
+    "selector-tag": "#ff79c6",
+    regexp: "#f1fa8c",
+    symbol: "#bd93f9",
+    addition: "#50fa7b",
+    deletion: "#ff5555"
+  }
+};
+const oneDark = {
+  name: "oneDark",
+  background: "#282c34",
+  defaultColor: "#abb2bf",
+  lineNumberColor: "#5c6370",
+  titleColor: "#828997",
+  scopes: {
+    keyword: "#c678dd",
+    built_in: "#e6c07b",
+    type: "#e6c07b",
+    literal: "#56b6c2",
+    number: "#d19a66",
+    string: "#98c379",
+    comment: "#5c6370",
+    title: "#61afef",
+    "function": "#61afef",
+    params: "#abb2bf",
+    attr: "#d19a66",
+    attribute: "#d19a66",
+    property: "#e06c75",
+    variable: "#e06c75",
+    operator: "#56b6c2",
+    subst: "#abb2bf",
+    "meta": "#61afef",
+    "tag": "#e06c75",
+    "name": "#e06c75",
+    "selector-tag": "#e06c75",
+    regexp: "#98c379",
+    symbol: "#56b6c2",
+    addition: "#98c379",
+    deletion: "#e06c75"
+  }
+};
+const THEMES = { githubDark, dracula, oneDark };
+const DEFAULT_THEME = "githubDark";
+function resolveTheme(theme) {
+  if (theme && typeof theme === "object")
+    return theme;
+  if (typeof theme === "string" && THEMES[theme])
+    return THEMES[theme];
+  return THEMES[DEFAULT_THEME];
+}
+
+function computeMetrics(doc, input) {
+  const { fontSize, charWidth } = input;
+  const lineHeight = Math.round(fontSize * 1.5);
+  const padLeft = 16;
+  const padRight = 24;
+  const padBottom = 16;
+  const lineCount = doc.lines.length;
+  const digits = String(Math.max(lineCount, 1)).length;
+  const gutter = input.lineNumber ? digits * charWidth + 24 : 0;
+  const headerHeight = 44;
+  const width = input.width && input.width !== "auto" ? input.width : Math.ceil(gutter + padLeft + doc.maxColumns * charWidth + padRight);
+  const height = input.height && input.height !== "auto" ? input.height : Math.ceil(headerHeight + lineCount * lineHeight + padBottom);
+  return {
+    fontSize,
+    charWidth,
+    lineHeight,
+    gutter,
+    padLeft,
+    padRight,
+    headerHeight,
+    width,
+    height
+  };
+}
+
+const MONO_FONT$1 = 'Menlo, Consolas, "Courier New", monospace';
+const DOT_COLORS$1 = ["#ff5f56", "#ffbd2e", "#27c93f"];
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+function paintBackground(ctx, theme, w, h) {
+  const bg = theme.background;
+  if (bg.startsWith("linear")) {
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    const colors = bg.match(/#[0-9a-fA-F]{3,8}/g) || ["#000", "#000"];
+    g.addColorStop(0, colors[0]);
+    g.addColorStop(1, colors[colors.length - 1]);
+    ctx.fillStyle = g;
+  } else {
+    ctx.fillStyle = bg;
+  }
+  ctx.fillRect(0, 0, w, h);
+}
+function renderCanvas(doc, theme, opt) {
+  const fontSize = opt.fontSize ?? 14;
+  const ctx = opt.ctx;
+  ctx.font = `${fontSize}px ${MONO_FONT$1}`;
+  const charWidth = ctx.measureText("M").width || fontSize * 0.6;
+  const m = computeMetrics(doc, {
+    fontSize,
+    charWidth,
+    lineNumber: opt.lineNumber,
+    title: opt.title,
+    width: opt.width,
+    height: opt.height
+  });
+  opt.canvasNode.width = m.width;
+  opt.canvasNode.height = m.height;
+  ctx.font = `${fontSize}px ${MONO_FONT$1}`;
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  const radius = opt.borderRadius ?? 8;
+  ctx.save();
+  roundRectPath(ctx, 0, 0, m.width, m.height, radius);
+  ctx.clip();
+  paintBackground(ctx, theme, m.width, m.height);
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.fillStyle = DOT_COLORS$1[i];
+    ctx.arc(20 + i * 20, 22, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (opt.title) {
+    ctx.fillStyle = theme.titleColor;
+    ctx.textAlign = "center";
+    ctx.fillText(opt.title, m.width / 2, 14);
+    ctx.textAlign = "left";
+  }
+  for (let i = 0; i < doc.lines.length; i++) {
+    const y = m.headerHeight + i * m.lineHeight;
+    if (opt.lineNumber) {
+      ctx.fillStyle = theme.lineNumberColor;
+      ctx.textAlign = "right";
+      ctx.fillText(String(i + 1), m.gutter - 12, y);
+      ctx.textAlign = "left";
+    }
+    let x = m.gutter + m.padLeft;
+    for (const tok of doc.lines[i].tokens) {
+      ctx.fillStyle = theme.scopes[tok.scope] || theme.defaultColor;
+      ctx.fillText(tok.text, x, y);
+      x += ctx.measureText(tok.text).width;
+    }
+  }
+  ctx.restore();
+}
+
+const MONO_FONT = 'Menlo, Consolas, "Courier New", monospace';
+const DOT_COLORS = ["#ff5f56", "#ffbd2e", "#27c93f"];
+function metricsOf(doc, opt) {
+  const fontSize = opt.fontSize ?? 14;
+  const charWidth = opt.ctx.measureText("M").width || fontSize * 0.6;
+  return computeMetrics(doc, {
+    fontSize,
+    charWidth,
+    lineNumber: opt.lineNumber,
+    title: opt.title,
+    width: opt.width,
+    height: opt.height
+  });
+}
+function buildPalette(doc, theme, opt, metrics) {
+  const fontSize = opt.fontSize ?? 14;
+  const m = metrics ?? metricsOf(doc, opt);
+  const views = [];
+  for (let i = 0; i < 3; i++) {
+    views.push({
+      type: "rect",
+      id: "dot_" + i,
+      css: {
+        top: "16px",
+        left: 14 + i * 20 + "px",
+        width: "12px",
+        height: "12px",
+        borderRadius: "50%",
+        background: DOT_COLORS[i]
+      }
+    });
+  }
+  if (opt.title) {
+    views.push({
+      type: "text",
+      id: "title",
+      text: opt.title,
+      css: {
+        top: "14px",
+        left: m.width / 2 + "px",
+        align: "center",
+        fontSize: fontSize + "px",
+        color: theme.titleColor
+      }
+    });
+  }
+  for (let i = 0; i < doc.lines.length; i++) {
+    const top = m.headerHeight + i * m.lineHeight + "px";
+    if (opt.lineNumber) {
+      views.push({
+        type: "text",
+        id: "ln_" + i,
+        text: String(i + 1),
+        css: {
+          top,
+          left: m.gutter - 12 + "px",
+          align: "right",
+          fontSize: fontSize + "px",
+          fontFamily: MONO_FONT,
+          color: theme.lineNumberColor
+        }
+      });
+    }
+    views.push({
+      type: "inlineText",
+      id: "line_" + i,
+      css: {
+        top,
+        left: m.gutter + m.padLeft + "px",
+        fontSize: fontSize + "px",
+        fontFamily: MONO_FONT,
+        lineHeight: m.lineHeight + "px"
+      },
+      textList: doc.lines[i].tokens.map((tok) => ({
+        text: tok.text,
+        css: { color: theme.scopes[tok.scope] || theme.defaultColor }
+      }))
+    });
+  }
+  return {
+    background: theme.background,
+    width: m.width + "px",
+    height: m.height + "px",
+    borderRadius: (opt.borderRadius ?? 8) + "px",
+    views
+  };
+}
+async function renderKernel(doc, theme, opt) {
+  const m = metricsOf(doc, opt);
+  const palette = buildPalette(doc, theme, opt, m);
+  opt.canvasNode.width = m.width;
+  opt.canvasNode.height = m.height;
+  const pen = new Pen(opt.ctx, palette);
+  await pen.paint();
+}
+
+async function phl(options) {
+  const tokens = tokenize(options.code, options.language);
+  const doc = layout(tokens);
+  const theme = resolveTheme(options.theme);
+  if (options.renderer === "kernel") {
+    await renderKernel(doc, theme, options);
+  } else {
+    renderCanvas(doc, theme, options);
+  }
+}
+
+export { THEMES, phl as default, phl };

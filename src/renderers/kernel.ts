@@ -118,11 +118,21 @@ export async function renderKernel(
   theme: Theme,
   opt: RenderOptions,
 ): Promise<void> {
+  console.log('[renderKernel] 计算指标...');
   const m = metricsOf(doc, opt);
+  console.log('[renderKernel] 指标完成');
+
+  console.log('[renderKernel] 构建 palette...');
   const palette = buildPalette(doc, theme, opt, m);
+  console.log('[renderKernel] palette 完成，views 数量:', palette.views.length);
+
+  console.log('[renderKernel] 设置 canvas 尺寸:',m.width, 'x', m.height);
   opt.canvasNode.width = m.width;
   opt.canvasNode.height = m.height;
+  console.log('[renderKernel] 创建 Pen...');
 
   const pen = new Pen(opt.ctx, palette as any);
+  console.log('[renderKernel] 开始 paint...');
   await pen.paint();
+  console.log('[renderKernel] paint 完成');
 }

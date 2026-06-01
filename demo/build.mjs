@@ -24,12 +24,31 @@ const buildOptions = {
 const serve = process.argv.includes('--serve');
 
 if (serve) {
-  // esbuild 0.12 旧 API：serve(serveOptions, buildOptions)
-  esbuild
-    .serve({ servedir: 'demo', port: 8000 }, buildOptions)
-    .then((server) => {
-      console.log(`Demo running at http://localhost:${server.port}/`);
-    });
+  (async () => {
+    let port = 8000;
+    let retries = 0;
+    const maxRetries = 10;
+
+    while (retries < maxRetries) {
+      try {
+        // 先进行一次初始构建以生成 bundle.js
+        await esbuild.build(buildOptions);
+        // 然后启动 serve 服务器来提供热更新
+        const serveResult = await esbuild.serve({ servedir: 'demo', port }, buildOptions);
+        console.log(`✓ Demo 运行于 http://localhost:${serveResult.port}/`);
+        return;
+      } catch (error) {
+        if (error.message.includes('address already in use') || error.message.includes('bind')) {
+          retries++;
+          port++;
+          console.log(`端口 ${port - 1} 被占用，尝试端口 ${port}...`);
+          if (retries < maxRetries) continue;
+        }
+        console.error('✗ 启动失败:', error.message);
+        process.exit(1);
+      }
+    }
+  })();
 } else {
   esbuild.build(buildOptions).then(() => {
     console.log('Build done -> demo/bundle.js');
