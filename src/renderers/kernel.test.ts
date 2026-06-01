@@ -7,7 +7,7 @@ const theme = resolveTheme('githubDark');
 const fakeCtx: any = { measureText: (s: string) => ({ width: s.length * 8 }) };
 
 describe('buildPalette', () => {
-  it('每行生成一个 inlineText view', () => {
+  it('每行 token 生成对应数量的 text view', () => {
     const doc: CodeDoc = {
       lines: [
         { tokens: [{ text: 'const', scope: 'keyword' }, { text: ' x', scope: '' }] },
@@ -21,11 +21,12 @@ describe('buildPalette', () => {
       code: '',
       language: 'javascript',
     });
-    const inlineTexts = palette.views.filter((v) => v.type === 'inlineText');
-    expect(inlineTexts.length).toBe(2);
+    // 第一行 2 个 token，第二行 1 个 token，加上 3 个圆点、0 个行号 = 6 个 text view
+    const textViews = palette.views.filter((v) => v.type === 'text' && v.id?.startsWith('line_'));
+    expect(textViews.length).toBe(3); // 2 + 1
   });
 
-  it('inlineText 的 textList 长度等于该行 token 数，颜色来自主题', () => {
+  it('token text view 颜色来自主题 scope', () => {
     const doc: CodeDoc = {
       lines: [{ tokens: [{ text: 'const', scope: 'keyword' }, { text: ' x', scope: '' }] }],
       maxColumns: 7,
@@ -36,10 +37,10 @@ describe('buildPalette', () => {
       code: '',
       language: 'javascript',
     });
-    const line = palette.views.find((v) => v.type === 'inlineText') as any;
-    expect(line.textList.length).toBe(2);
-    expect(line.textList[0].css.color).toBe(theme.scopes.keyword);
-    expect(line.textList[1].css.color).toBe(theme.defaultColor);
+    const textViews = palette.views.filter((v) => v.type === 'text' && v.id?.startsWith('line_'));
+    expect(textViews.length).toBe(2);
+    expect(textViews[0].css.color).toBe(theme.scopes.keyword);
+    expect(textViews[1].css.color).toBe(theme.defaultColor);
   });
 
   it('生成三个圆点 rect', () => {
