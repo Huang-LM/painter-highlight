@@ -15,7 +15,7 @@
     </style>
   </head>
   <body>
-    <h2>painter-highlight：左 A(painter-kernel) vs 右 B(canvas)</h2>
+    <h2>painter-highlight 代码高亮渲染</h2>
     <div class="controls">
       <label>预设 <select id="preset"></select></label>
       <label>语言 <input id="lang" value="typescript" /></label>
@@ -32,8 +32,7 @@
     </div>
     <textarea id="code"></textarea>
     <div class="stage">
-      <div class="panel"><h3>A: painter-kernel</h3><canvas id="canvasA"></canvas></div>
-      <div class="panel"><h3>B: canvas</h3><canvas id="canvasB"></canvas></div>
+      <div class="panel"><canvas id="canvas"></canvas></div>
     </div>
     <script src="./bundle.js"></script>
   </body>

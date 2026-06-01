@@ -87,21 +87,36 @@ export function buildPalette(
       });
     }
 
-    views.push({
-      type: 'inlineText',
-      id: 'line_' + i,
-      css: {
-        top,
-        left: m.gutter + m.padLeft + 'px',
-        fontSize: fontSize + 'px',
-        fontFamily: MONO_FONT,
-        lineHeight: m.lineHeight + 'px',
-      },
-      textList: doc.lines[i].tokens.map((tok) => ({
+    // 逐个 token 计算 x 坐标，一个 token 一个 text view
+    let tokenLeft = m.gutter + m.padLeft;
+    for (let j = 0; j < doc.lines[i].tokens.length; j++) {
+      const tok = doc.lines[i].tokens[j];
+      views.push({
+        type: 'text',
+        id: `line_${i}_tok_${j}`,
         text: tok.text,
-        css: { color: theme.scopes[tok.scope] || theme.defaultColor },
-      })),
-    });
+        css: {
+          top,
+          left: tokenLeft + 'px',
+          fontSize: fontSize + 'px',
+          fontFamily: MONO_FONT,
+          color: theme.scopes[tok.scope] || theme.defaultColor,
+        },
+      });
+      // token 宽度：ASCII 字符按 charWidth，CJK 字符按 charWidth*2
+      let tokenWidth = 0;
+      for (let k = 0; k < tok.text.length; k++) {
+        const code = tok.text.charCodeAt(k);
+        // CJK Unified Ideographs (4E00-9FFF) + CJK Unified Ideographs Extension A (3400-4DBF)
+        // + CJK Unified Ideographs Extension B 及以后 + CJK Compatibility Ideographs (F900-FAFF)
+        const isCJK = (code >= 0x4e00 && code <= 0x9fff) ||
+                      (code >= 0x3400 && code <= 0x4dbf) ||
+                      (code >= 0x20000) ||
+                      (code >= 0xf900 && code <= 0xfaff);
+        tokenWidth += isCJK ? m.charWidth * 2 : m.charWidth;
+      }
+      tokenLeft += tokenWidth;
+    }
   }
 
   return {

@@ -36,24 +36,15 @@ async function render() {
     console.log('[render] 开始渲染...');
     const base = currentOptionsBase();
     console.log('[render] 获取 canvas 元素...');
-    const a = $('canvasA');
-    const b = $('canvasB');
+    const canvas = $('canvas');
 
-    console.log('[render] 开始渲染 kernel 渲染器...');
-    const kernelPromise = phl({ canvasNode: a, ctx: a.getContext('2d'), renderer: 'kernel', ...base });
-    const kernelTimeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('kernel 渲染超时（>10秒）')), 10000)
+    console.log('[render] 开始渲染...');
+    const renderPromise = phl({ canvasNode: canvas, ctx: canvas.getContext('2d'), renderer: 'canvas', ...base });
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('渲染超时（>10秒）')), 10000)
     );
-    await Promise.race([kernelPromise, kernelTimeout]);
-    console.log('[render] kernel 渲染完成');
-
-    console.log('[render] 开始渲染 canvas 渲染器...');
-    const canvasPromise = phl({ canvasNode: b, ctx: b.getContext('2d'), renderer: 'canvas', ...base });
-    const canvasTimeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('canvas 渲染超时（>10秒）')), 10000)
-    );
-    await Promise.race([canvasPromise, canvasTimeout]);
-    console.log('[render] canvas 渲染完成');
+    await Promise.race([renderPromise, timeout]);
+    console.log('[render] 渲染完成');
   } catch (error) {
     console.error('渲染失败:', error);
     alert(`渲染失败: ${error instanceof Error ? error.message : String(error)}`);
